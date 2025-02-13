@@ -1,7 +1,0 @@
-{
-  "name": "Anilla",
-  "integrations": {
-    "capacitor": {}
-  },
-  "type": "angular"
-}
