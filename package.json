@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
     "build:web": "expo export --platform web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "ios:clean": "rm -rf ios && rm -rf node_modules && npm install && npx expo prebuild --clean",
+    "ios:pods": "cd ios && pod install --repo-update && cd ..",
+    "ios:build": "npm run ios:clean && npm run ios:pods && open ios/anillacigarexplorer.xcworkspace"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",

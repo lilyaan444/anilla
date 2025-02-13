@@ -13,9 +13,9 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: '#FDF5E6',
           borderTopColor: '#DEB887',
-          height: isWeb ? 60 : 'auto',
-          paddingBottom: isWeb ? 5 : 'auto',
-          paddingTop: isWeb ? 5 : 'auto',
+          height: isWeb ? 60 : 85, // Increased height for iOS
+          paddingBottom: isWeb ? 5 : 25, // Added bottom padding for safe area
+          paddingTop: isWeb ? 5 : 0,
         },
         tabBarActiveTintColor: BROWN,
         tabBarInactiveTintColor: '#A0522D',

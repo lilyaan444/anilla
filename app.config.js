@@ -7,22 +7,19 @@ export default {
     icon: "./assets/images/icon.png",
     scheme: "myapp",
     userInterfaceStyle: "automatic",
-    splash: {
-      image: "./assets/images/splash.png",
-      resizeMode: "contain",
-      backgroundColor: "#ffffff"
-    },
     assetBundlePatterns: [
       "**/*"
     ],
     ios: {
-      supportsTablet: true
+      supportsTablet: true,
+      bundleIdentifier: "com.lilyaan444.anillacigarexplorer",
+      buildNumber: "1.0.0",
+      config: {
+        usesNonExemptEncryption: false
+      }
     },
     android: {
-      adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
-        backgroundColor: "#ffffff"
-      }
+      package: "com.lilyaan444.anillacigarexplorer"
     },
     web: {
       bundler: "metro",
@@ -35,6 +32,10 @@ export default {
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+    },
+    jsEngine: "jsc",
+    developmentClient: {
+      silentLaunch: true
     }
   }
 };
