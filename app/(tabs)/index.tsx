@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useState, useMemo } from 'react';
 import { useCigars } from '../../src/hooks/useCigars';
+import { useReviews } from '../../src/hooks/useReviews';
 
 type Filter = {
   origin?: string;
@@ -37,6 +38,27 @@ export default function HomeScreen() {
     });
   };
 
+  const RatingStars = ({ cigarId }: { cigarId: string }) => {
+    const { reviews } = useReviews(cigarId);
+    const averageRating = reviews.length > 0
+      ? Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length))
+      : 0;
+
+    return (
+      <View style={styles.ratingContainer}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Ionicons
+            key={star}
+            name={star <= averageRating ? "star" : "star-outline"}
+            size={12}
+            color="#DAA520"
+          />
+        ))}
+        <Text style={styles.ratingText}>({reviews.length})</Text>
+      </View>
+    );
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -57,14 +79,21 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.logo}>anilla</Text>
-        <TouchableOpacity 
-          style={styles.filterButton}
-          onPress={() => setFilterVisible(!filterVisible)}>
-          {Object.keys(activeFilters).length > 0 && (
-            <View style={styles.filterBadge} />
-          )}
-          <Ionicons name="filter" size={24} color="#8B4513" />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <Link href="/flavors" asChild>
+            <TouchableOpacity style={styles.headerButton}>
+              <Ionicons name="leaf-outline" size={24} color="#8B4513" />
+            </TouchableOpacity>
+          </Link>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setFilterVisible(!filterVisible)}>
+            {Object.keys(activeFilters).length > 0 && (
+              <View style={styles.filterBadge} />
+            )}
+            <Ionicons name="filter" size={24} color="#8B4513" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {filterVisible && (
@@ -72,14 +101,14 @@ export default function HomeScreen() {
           <View style={styles.filterHeader}>
             <Text style={styles.filterTitle}>Filter & Sort</Text>
             {Object.keys(activeFilters).length > 0 && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.clearFilters}
                 onPress={() => setActiveFilters({})}>
                 <Text style={styles.clearFiltersText}>Clear All</Text>
               </TouchableOpacity>
             )}
           </View>
-          
+
           <View style={styles.filterSection}>
             <Text style={styles.filterSectionTitle}>Origin</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -130,7 +159,7 @@ export default function HomeScreen() {
         <View style={styles.grid}>
           {filteredCigars.map((cigar) => (
             <Link href={`/cigar/${cigar.id}`} key={cigar.id} asChild>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.7}>
                 <Image source={{ uri: cigar.image }} style={styles.cardImage} />
@@ -138,6 +167,7 @@ export default function HomeScreen() {
                   <Text style={styles.cardTitle}>{cigar.name}</Text>
                   <Text style={styles.cardSubtitle}>{cigar.origin}</Text>
                   <Text style={styles.cardFlavor}>{cigar.flavor}</Text>
+                  <RatingStars cigarId={cigar.id} />
                 </View>
                 <View style={styles.cardBadges}>
                   {cigar.format === 'Robusto' && (
@@ -217,11 +247,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)'
+        }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
+        }
+    ),
     overflow: 'hidden',
   },
   cardImage: {
@@ -247,6 +284,17 @@ const styles = StyleSheet.create({
   cardFlavor: {
     fontSize: 12,
     color: '#CD853F',
+    marginBottom: 4,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  ratingText: {
+    fontSize: 10,
+    color: '#CD853F',
+    marginLeft: 4,
   },
   cardBadges: {
     position: 'absolute',
@@ -325,5 +373,13 @@ const styles = StyleSheet.create({
   },
   filterTextActive: {
     color: '#FFFFFF',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerButton: {
+    padding: 8,
   },
 });

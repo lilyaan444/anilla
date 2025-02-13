@@ -13,8 +13,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: '#FDF5E6',
           borderTopColor: '#DEB887',
-          height: isWeb ? 60 : 85, // Increased height for iOS
-          paddingBottom: isWeb ? 5 : 25, // Added bottom padding for safe area
+          height: isWeb ? 60 : 85,
+          paddingBottom: isWeb ? 5 : 25,
           paddingTop: isWeb ? 5 : 0,
         },
         tabBarActiveTintColor: BROWN,
@@ -43,10 +43,6 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => (
             <Ionicons name="search" size={size} color={color} />
           ),
-          tabBarBadgeStyle: {
-            backgroundColor: 'transparent',
-            marginTop: isWeb ? 3 : 0,
-          },
         }}
       />
       <Tabs.Screen
@@ -65,6 +61,12 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="flavors"
+        options={{
+          href: null, // This will hide the tab from navigation
         }}
       />
     </Tabs>
