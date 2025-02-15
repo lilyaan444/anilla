@@ -6,18 +6,20 @@ import { useFavoritesStore } from '../../src/store/favorites';
 import { useReviews } from '../../src/hooks/useReviews';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../src/providers/AuthProvider';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function CigarDetailScreen() {
+  const { t } = useTranslation();  // Ajout de l'initialisation du hook
   const { id } = useLocalSearchParams();
   const { cigars, loading: cigarsLoading, error: cigarsError } = useCigars();
   const { reviews, userReview, loading: reviewsLoading, error: reviewsError, addReview, updateReview, deleteReview } = useReviews(id as string);
   const { addFavorite, removeFavorite, isFavorite, fetchFavorites } = useFavoritesStore();
   const { session } = useAuth();
-  
+
   const [rating, setRating] = useState(userReview?.rating || 5);
   const [comment, setComment] = useState(userReview?.comment || '');
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const cigar = cigars.find(c => c.id === id);
   const favorite = isFavorite(id as string);
 
@@ -35,7 +37,7 @@ export default function CigarDetailScreen() {
   if (cigarsLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text>Loading...</Text>
+        <Text>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -44,12 +46,12 @@ export default function CigarDetailScreen() {
     return (
       <View style={[styles.container, styles.centered]}>
         <Text style={styles.errorText}>
-          {cigarsError || 'Cigar not found'}
+          {cigarsError || t('cigar.notFound')}
         </Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>{t('common.goBack')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -62,8 +64,8 @@ export default function CigarDetailScreen() {
         'Please sign in to add favorites',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Sign In', 
+          {
+            text: 'Sign In',
             onPress: () => router.push('/profile')
           }
         ]
@@ -89,8 +91,8 @@ export default function CigarDetailScreen() {
         'Please sign in to add a review',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Sign In', 
+          {
+            text: 'Sign In',
             onPress: () => router.push('/profile')
           }
         ]
@@ -116,7 +118,7 @@ export default function CigarDetailScreen() {
       'Are you sure you want to delete your review?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
+        {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
@@ -142,8 +144,8 @@ export default function CigarDetailScreen() {
     <View style={styles.container}>
       <ScrollView>
         <Image source={{ uri: cigar.image }} style={styles.image} />
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -151,41 +153,41 @@ export default function CigarDetailScreen() {
 
         <View style={styles.content}>
           <Text style={styles.name}>{cigar.name}</Text>
-          
+
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Origin</Text>
+              <Text style={styles.infoLabel}>{t('cigar.origin')}</Text>
               <Text style={styles.infoValue}>{cigar.origin}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Format</Text>
+              <Text style={styles.infoLabel}>{t('cigar.format')}</Text>
               <Text style={styles.infoValue}>{cigar.format}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Rating</Text>
+              <Text style={styles.infoLabel}>{t('cigar.rating')}</Text>
               <Text style={styles.infoValue}>{averageRating}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Flavor Profile</Text>
+            <Text style={styles.sectionTitle}>{t('cigar.flavorProfile')}</Text>
             <Text style={styles.flavorText}>{cigar.flavor}</Text>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.sectionTitle}>{t('cigar.description')}</Text>
             <Text style={styles.description}>{cigar.description}</Text>
           </View>
 
           <View style={styles.section}>
             <View style={styles.reviewHeader}>
-              <Text style={styles.sectionTitle}>Reviews</Text>
+              <Text style={styles.sectionTitle}>{t('cigar.reviews')}</Text>
               {session && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.addReviewButton}
                   onPress={() => setIsEditing(true)}>
                   <Text style={styles.addReviewButtonText}>
-                    {userReview ? 'Edit Review' : 'Add Review'}
+                    {userReview ? t('cigar.editReview') : t('cigar.addReview')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -215,7 +217,7 @@ export default function CigarDetailScreen() {
                   numberOfLines={4}
                 />
                 <View style={styles.reviewActions}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.reviewButton, styles.reviewButtonCancel]}
                     onPress={() => {
                       setIsEditing(false);
@@ -227,13 +229,13 @@ export default function CigarDetailScreen() {
                     <Text style={styles.reviewButtonText}>Cancel</Text>
                   </TouchableOpacity>
                   {userReview && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={[styles.reviewButton, styles.reviewButtonDelete]}
                       onPress={handleDeleteReview}>
                       <Text style={styles.reviewButtonText}>Delete</Text>
                     </TouchableOpacity>
                   )}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.reviewButton, styles.reviewButtonSubmit]}
                     onPress={handleReviewSubmit}>
                     <Text style={styles.reviewButtonText}>Submit</Text>
@@ -273,16 +275,16 @@ export default function CigarDetailScreen() {
           </View>
 
           <View style={styles.actions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionButton, favorite && styles.actionButtonActive]}
               onPress={toggleFavorite}>
-              <Ionicons 
-                name={favorite ? "heart" : "heart-outline"} 
-                size={24} 
-                color={favorite ? "#FFFFFF" : "#8B4513"} 
+              <Ionicons
+                name={favorite ? "heart" : "heart-outline"}
+                size={24}
+                color={favorite ? "#FFFFFF" : "#8B4513"}
               />
               <Text style={[styles.actionText, favorite && styles.actionTextActive]}>
-                {favorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                {favorite ? t('cigar.removeFromFavorites') : t('cigar.addToFavorites')}
               </Text>
             </TouchableOpacity>
           </View>

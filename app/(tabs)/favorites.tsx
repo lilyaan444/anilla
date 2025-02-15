@@ -4,11 +4,13 @@ import { useFavoritesStore } from '../../src/store/favorites';
 import { Link } from 'expo-router';
 import { useEffect } from 'react';
 import { useCigars } from '../../src/hooks/useCigars';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function FavoritesScreen() {
+  const { t } = useTranslation();
   const { favorites, fetchFavorites, removeFavorite, loading: favoritesLoading } = useFavoritesStore();
   const { cigars, loading: cigarsLoading } = useCigars();
-  
+
   const favoriteCigars = cigars.filter(cigar => favorites.includes(cigar.id));
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function FavoritesScreen() {
           </View>
         </TouchableOpacity>
       </Link>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.removeButton}
         onPress={() => handleRemoveFavorite(cigar.id)}>
         <Ionicons name="heart" size={24} color="#8B4513" />
@@ -48,7 +50,7 @@ export default function FavoritesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Favorites</Text>
+        <Text style={styles.title}>{t('favorites.title')}</Text>
       </View>
 
       <FlatList
@@ -59,11 +61,11 @@ export default function FavoritesScreen() {
         ListEmptyComponent={() => (
           <View style={styles.emptyState}>
             {loading ? (
-              <Text style={styles.emptyStateText}>Loading...</Text>
+              <Text style={styles.emptyStateText}>{t('common.loading')}</Text>
             ) : (
               <>
                 <Ionicons name="heart-outline" size={48} color="#CD853F" />
-                <Text style={styles.emptyStateText}>No favorites yet</Text>
+                <Text style={styles.emptyStateText}>{t('favorites.noFavorites')}</Text>
               </>
             )}
           </View>

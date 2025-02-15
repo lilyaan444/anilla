@@ -1,10 +1,12 @@
 import { View, Text, StyleSheet, TextInput, FlatList, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useCigars } from '../../src/hooks/useCigars';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function SearchScreen() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const { cigars, loading, error } = useCigars(searchQuery);
 
@@ -28,7 +30,7 @@ export default function SearchScreen() {
           <Ionicons name="search" size={20} color="#8B4513" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search cigars..."
+            placeholder={t('search.placeholder')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#CD853F"
@@ -43,7 +45,7 @@ export default function SearchScreen() {
 
       {error ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorText}>{t('common.error')}</Text>
         </View>
       ) : (
         <FlatList
@@ -54,16 +56,23 @@ export default function SearchScreen() {
           ListEmptyComponent={() => (
             <View style={styles.emptyState}>
               {loading ? (
-                <Text style={styles.emptyStateText}>Loading...</Text>
+                <Text style={styles.emptyStateText}>{t('common.loading')}</Text>
               ) : searchQuery.length > 0 ? (
                 <>
                   <Ionicons name="search" size={48} color="#CD853F" />
-                  <Text style={styles.emptyStateText}>No cigars found</Text>
+                  <Text style={styles.emptyStateText}>{t('search.noResults')}</Text>
+                  <TouchableOpacity
+                    style={styles.createButton}
+                    onPress={() => router.push('/create-cigar')}
+                  >
+                    <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
+                    <Text style={styles.createButtonText}>{t('search.createCigar')}</Text>
+                  </TouchableOpacity>
                 </>
               ) : (
                 <>
                   <Ionicons name="search" size={48} color="#CD853F" />
-                  <Text style={styles.emptyStateText}>Search for cigars</Text>
+                  <Text style={styles.emptyStateText}>{t('search.startSearching')}</Text>
                 </>
               )}
             </View>
@@ -163,5 +172,20 @@ const styles = StyleSheet.create({
     color: '#FF0000',
     fontSize: 16,
     textAlign: 'center',
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8B4513',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginTop: 16,
+  },
+  createButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });

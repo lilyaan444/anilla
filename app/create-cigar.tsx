@@ -7,8 +7,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/providers/AuthProvider';
 import { ActivityIndicator } from 'react-native';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 export default function CreateCigarScreen() {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
@@ -89,11 +91,11 @@ export default function CreateCigarScreen() {
   if (!session) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text style={styles.errorText}>Please sign in to create a cigar</Text>
+        <Text style={styles.errorText}>{t('createCigar.signInRequired')}</Text>
         <TouchableOpacity
           style={styles.signInButton}
           onPress={() => router.push('/profile')}>
-          <Text style={styles.signInButtonText}>Sign In</Text>
+          <Text style={styles.signInButtonText}>{t('common.signIn')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -326,8 +328,8 @@ export default function CreateCigarScreen() {
           <Ionicons name="arrow-back" size={24} color="#8B4513" />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Nouveau Cigare</Text>
-          <Text style={styles.subtitle}>Ajoutez votre cigare préféré</Text>
+          <Text style={styles.title}>{t('createCigar.title')}</Text>
+          <Text style={styles.subtitle}>{t('createCigar.subtitle')}</Text>
         </View>
       </View>
 
@@ -363,44 +365,44 @@ export default function CreateCigarScreen() {
 
           <View style={styles.form}>
             <View style={[styles.inputContainer, { zIndex: 5 }]}>
-              <Text style={styles.label}>Nom</Text>
+              <Text style={styles.label}>{t('createCigar.name')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.name}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-                placeholder="Entrez le nom du cigare"
+                placeholder={t('createCigar.namePlaceholder')}
               />
             </View>
 
             <View style={[styles.inputContainer, { zIndex: 4 }]}>
-              <Text style={styles.label}>Origine</Text>
+              <Text style={styles.label}>{t('createCigar.origin')}</Text>
               <TouchableOpacity
                 style={styles.input}
                 onPress={() => setShowOriginPicker(true)}>
                 <Text style={formData.origin ? styles.inputText : styles.placeholderText}>
-                  {formData.origin || 'Sélectionnez le pays d\'origine'}
+                  {formData.origin || t('createCigar.originPlaceholder')}
                 </Text>
               </TouchableOpacity>
             </View>
 
             <View style={[styles.inputContainer, { zIndex: 3 }]}>
-              <Text style={styles.label}>Format</Text>
+              <Text style={styles.label}>{t('createCigar.format')}</Text>
               <TouchableOpacity
                 style={styles.input}
                 onPress={() => setShowFormatPicker(true)}>
                 <Text style={formData.format ? styles.inputText : styles.placeholderText}>
-                  {formData.format || 'Select cigar format'}
+                  {formData.format || t('createCigar.formatPlaceholder')}
                 </Text>
               </TouchableOpacity>
             </View>
 
             <View style={[styles.inputContainer, { zIndex: 2 }]}>
-              <Text style={styles.label}>Flavor Profile</Text>
+              <Text style={styles.label}>{t('createCigar.flavor')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.flavor}
                 onChangeText={handleFlavorChange}
-                placeholder="Enter or select flavors"
+                placeholder={t('createCigar.flavorPlaceholder')}
               />
               {flavorSuggestions.length > 0 && (
                 <View style={styles.suggestionsContainer}>
@@ -417,12 +419,12 @@ export default function CreateCigarScreen() {
             </View>
 
             <View style={[styles.inputContainer, { zIndex: 1 }]}>
-              <Text style={styles.label}>Description</Text>
+              <Text style={styles.label}>{t('createCigar.description')}</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={formData.description}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
-                placeholder="Enter detailed description"
+                placeholder={t('createCigar.descriptionPlaceholder')}
                 multiline
                 numberOfLines={4}
               />
