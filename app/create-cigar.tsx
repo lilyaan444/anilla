@@ -6,11 +6,13 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/providers/AuthProvider';
+import { ActivityIndicator } from 'react-native';
 
 export default function CreateCigarScreen() {
   const { session } = useAuth();
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState('');  // Ajout de l'état uploadProgress
   const [formData, setFormData] = useState({
     name: '',
     origin: '',
@@ -99,18 +101,56 @@ export default function CreateCigarScreen() {
 
   const pickImage = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.8,
-      });
+      // Vérifier les permissions pour iOS
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Permission requise',
+            'Nous avons besoin de votre permission pour accéder à la galerie photos.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+      }
 
-      if (!result.canceled) {
-        setImage(result.assets[0].uri);
+      if (Platform.OS === 'web') {
+        // Code existant pour le web...
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const fileReader = new FileReader();
+            fileReader.onload = (e) => {
+              setImage(e.target.result);
+            };
+            fileReader.readAsDataURL(file);
+          }
+        };
+        input.click();
+      } else {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [16, 9],
+          quality: 0.5,
+          maxWidth: 1200,
+          maxHeight: 675,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          setImage(result.assets[0].uri);
+        }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      console.error('Image picker error:', error);
+      Alert.alert(
+        'Erreur',
+        'Impossible de sélectionner l\'image. Veuillez réessayer.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -123,9 +163,12 @@ export default function CreateCigarScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: [ImagePicker.MediaType.Images],
         allowsEditing: true,
         aspect: [16, 9],
-        quality: 0.8,
+        quality: 0.5,
+        maxWidth: 1200,
+        maxHeight: 675,
       });
 
       if (!result.canceled) {
@@ -136,79 +179,143 @@ export default function CreateCigarScreen() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!image) {
-      Alert.alert('Error', 'Please add an image');
-      return;
-    }
+  const resetForm = () => {
+      setImage(null);
+      setFormData({
+        name: '',
+        origin: '',
+        format: '',
+        flavor: '',
+        description: '',
+      });
+      setUploadProgress('');
+    };
 
-    if (!formData.name || !formData.origin || !formData.format || !formData.flavor || !formData.description) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Vérifier l'authentification
-      if (!session?.user) {
-        throw new Error('User must be authenticated to upload images');
+    const handleSubmit = async () => {
+      if (!image) {
+        Alert.alert('Error', 'Please add an image');
+        return;
       }
 
-      // Upload image to Supabase Storage
-      const imageResponse = await fetch(image);
-      const imageBlob = await imageResponse.blob();
-      const imagePath = `cigars/${Date.now()}-${formData.name.toLowerCase().replace(/\s+/g, '-')}`;
-
-      console.log('Uploading image to path:', imagePath);
-      console.log('Image blob size:', imageBlob.size);
-      console.log('User ID:', session.user.id);
-
-      const { error: uploadError, data } = await supabase.storage
-        .from('cigar-images')
-        .upload(imagePath, imageBlob, {
-          contentType: imageBlob.type || 'image/jpeg',
-          upsert: false,
-          cacheControl: '3600'
-        });
-
-      if (uploadError) {
-        console.error('Upload error details:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
+      if (!formData.name || !formData.origin || !formData.format || !formData.flavor || !formData.description) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
       }
 
-      console.log('Upload successful:', data);
+      setLoading(true);
+      setUploadProgress('Préparation de l\'image...');
 
-      // Get public URL for the uploaded image
-      const { data: { publicUrl } } = supabase.storage
-        .from('cigar-images')
-        .getPublicUrl(imagePath);
+      try {
+        if (!session?.user) {
+          throw new Error('User must be authenticated to upload images');
+        }
 
-      console.log('Public URL:', publicUrl);
+        setUploadProgress('Traitement de l\'image...');
 
-      // Create cigar record in database
-      const { error: insertError } = await supabase
-        .from('cigars')
-        .insert([
-          {
+        let blob;
+        if (Platform.OS === 'web' && image.startsWith('data:')) {
+          // Gestion spéciale pour les images base64 sur le web
+          const base64Data = image.split(',')[1];
+          const byteCharacters = atob(base64Data);
+          const byteArrays = [];
+
+          for (let i = 0; i < byteCharacters.length; i += 512) {
+            const slice = byteCharacters.slice(i, i + 512);
+            const byteNumbers = new Array(slice.length);
+            for (let j = 0; j < slice.length; j++) {
+              byteNumbers[j] = slice.charCodeAt(j);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+          }
+
+          blob = new Blob(byteArrays, { type: 'image/jpeg' });
+        } else {
+          const response = await fetch(image);
+          if (!response.ok) {
+            throw new Error('Failed to fetch image data');
+          }
+          blob = await response.blob();
+        }
+
+        if (!blob) {
+          throw new Error('Failed to create image blob');
+        }
+
+        setUploadProgress('Upload de l\'image...');
+
+        // Vérifier la taille du blob
+        if (blob.size > 5000000) { // 5MB limit
+          throw new Error('Image size too large. Please choose a smaller image.');
+        }
+
+        // Créer un nom de fichier sécurisé
+        const fileName = formData.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+          .trim();
+        const imagePath = `cigars/${Date.now()}-${fileName}`;
+
+        // Upload avec type MIME explicite
+        const { error: uploadError } = await supabase.storage
+          .from('cigar-images')
+          .upload(imagePath, blob, {
+            contentType: 'image/jpeg',
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
+
+        // Récupérer l'URL publique
+        const { data: { publicUrl } } = supabase.storage
+          .from('cigar-images')
+          .getPublicUrl(imagePath);
+
+        // Créer l'enregistrement dans la base de données
+        const { error: insertError } = await supabase
+          .from('cigars')
+          .insert([{
             ...formData,
             image: publicUrl,
-            created_by: session.user.id,
-          }
-        ]);
+            created_by: session.user.id
+          }]);
 
-      if (insertError) throw insertError;
+        if (insertError) {
+          throw insertError;
+        }
 
-      Alert.alert('Success', 'Cigar created successfully', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
-    } catch (error) {
-      console.error('Error details:', error);
-      Alert.alert('Error', error.message || 'An error occurred while creating the cigar');
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Réinitialiser le formulaire
+        resetForm();
+
+        // Afficher la confirmation et rediriger
+        if (Platform.OS === 'web') {
+          alert('Cigare créé avec succès !');
+          router.back();
+        } else {
+          Alert.alert(
+            'Succès !',
+            'Votre cigare a été créé avec succès.',
+            [{
+              text: 'OK',
+              onPress: () => router.back()
+            }]
+          );
+        }
+
+      } catch (error) {
+        console.error('Error details:', error);
+        const errorMessage = Platform.OS === 'web'
+          ? alert('Une erreur est survenue lors de la création du cigare.')
+          : Alert.alert('Erreur', error.message || 'Une erreur est survenue lors de la création du cigare.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
   return (
     <View style={styles.container}>
@@ -325,9 +432,18 @@ export default function CreateCigarScreen() {
               style={[styles.submitButton, loading && styles.submitButtonDisabled]}
               onPress={handleSubmit}
               disabled={loading}>
-              <Text style={styles.submitButtonText}>
-                {loading ? 'Création...' : 'Créer le cigare'}
-              </Text>
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color="#FFFFFF" />
+                  <Text style={styles.submitButtonText}>
+                    {uploadProgress}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.submitButtonText}>
+                  Créer le cigare
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -505,7 +621,6 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   imagePlaceholder: {
     flex: 1,
@@ -576,6 +691,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 8,
+    minHeight: 56,
   },
   submitButtonDisabled: {
     opacity: 0.5,
