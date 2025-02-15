@@ -11,6 +11,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as d3Shape from 'd3-shape';
 import chroma from 'chroma-js';
+import { router } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const CATEGORIES = {
   'Earth & Wood': {
@@ -148,7 +151,18 @@ export default function FlavorWheel() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
-        <Text style={styles.title}>Cigar Flavor Wheel</Text>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#8B4513" />
+          </TouchableOpacity>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Cigar Flavor Wheel</Text>
+            <Text style={styles.subtitle}>Explore cigar taste profiles</Text>
+          </View>
+        </View>
+
         <Animated.View style={[styles.wheelContainer, animatedStyle]}>
           {renderWheel()}
         </Animated.View>
@@ -174,14 +188,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FDF5E6',
+  },
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'web' ? 40 : 60,
+    paddingBottom: 20,
+    backgroundColor: '#FDF5E6',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 12,
+  },
+  titleContainer: {
+    flex: 1,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
     color: '#8B4513',
-    marginBottom: 20,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#CD853F',
+    marginTop: 4,
   },
   wheelContainer: {
     width: '100%',

@@ -80,6 +80,11 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.logo}>anilla</Text>
         <View style={styles.headerButtons}>
+          <Link href="/create-cigar" asChild>
+            <TouchableOpacity style={styles.headerButton}>
+              <Ionicons name="add-circle-outline" size={24} color="#8B4513" />
+            </TouchableOpacity>
+          </Link>
           <Link href="/flavors" asChild>
             <TouchableOpacity style={styles.headerButton}>
               <Ionicons name="leaf-outline" size={24} color="#8B4513" />

@@ -11,10 +11,11 @@
     "ios": "expo run:ios",
     "ios:clean": "rm -rf ios && rm -rf node_modules && npm install && npx expo prebuild --clean",
     "ios:pods": "cd ios && pod install --repo-update && cd ..",
-    "ios:build": "npm run ios:clean && npm run ios:pods && open ios/anillacigarexplorer.xcworkspace"
+    "ios:build": "npx expo prebuild -p ios && cd ios && pod install && open anillacigarexplorer.xcworkspace"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
+    "@gorhom/portal": "^1.0.14",
     "@react-native-async-storage/async-storage": "^1.21.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
@@ -26,9 +27,10 @@
     "expo-constants": "^17.0.5",
     "expo-font": "^13.0.3",
     "expo-haptics": "^14.0.1",
+    "expo-image-picker": "^16.0.6",
     "expo-linear-gradient": "^14.0.2",
     "expo-linking": "^7.0.5",
-    "expo-router": "4.0.17",
+    "expo-router": "^4.0.17",
     "expo-splash-screen": "^0.29.21",
     "expo-status-bar": "^2.0.1",
     "expo-symbols": "^0.2.2",
@@ -51,7 +53,10 @@
     "@babel/core": "^7.25.2",
     "@types/chroma-js": "^3.1.1",
     "@types/d3-shape": "^3.1.7",
+    "@types/dom-speech-recognition": "^0.0.4",
+    "@types/node": "^22.13.4",
     "@types/react": "~18.3.12",
-    "typescript": "^5.3.3"
+    "@types/react-native": "^0.72.8",
+    "typescript": "^5.7.3"
   }
 }
