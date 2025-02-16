@@ -18,6 +18,8 @@ import { CATEGORIES } from '../../src/data/flavorCategories';
 import FlavorDetailModal from '../../src/components/FlavorDetailModal';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
+// Ajouter l'import Haptics
+import * as Haptics from 'expo-haptics';
 
 
 const { width } = Dimensions.get('window');
@@ -216,9 +218,35 @@ export default function FlavorWheel() {
 
   const handlePress = useCallback((category) => {
     if (detailsPanelY.value === 0) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+        // Ajustement des vibrations pendant la rotation
+        const rotationDuration = 500; // Réduit la durée totale
+        const vibrationInterval = 80; // Vibrations plus rapprochées
+        const numVibrations = 4; // Nombre fixe de vibrations
+        let vibrationCount = 0;
+
+        const intervalId = setInterval(() => {
+          if (vibrationCount < numVibrations) {
+            Haptics.impactAsync(
+              vibrationCount === numVibrations - 1
+                ? Haptics.ImpactFeedbackStyle.Medium
+                : Haptics.ImpactFeedbackStyle.Light
+            );
+            vibrationCount++;
+          } else {
+            clearInterval(intervalId);
+          }
+        }, vibrationInterval);
+      }
+
       setSelectedCategory(prev => {
         if (prev === category) {
-          scale.value = withSpring(1, { damping: 2 }); // Un rebond en douceur
+          if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          }
+          scale.value = withSpring(1, { damping: 2 });
           opacity.value = withTiming(1);
           return null;
         }

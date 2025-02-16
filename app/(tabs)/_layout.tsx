@@ -1,13 +1,20 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
+import { Platform, Pressable } from 'react-native';
 import { useTranslation } from '../../src/hooks/useTranslation';
+import * as Haptics from 'expo-haptics';
 
 const BROWN = '#8B4513';
 const isWeb = Platform.OS === 'web';
 
 export default function TabLayout() {
   const { t } = useTranslation();
+
+  const handleTabPress = () => {
+    if (!isWeb) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
 
   return (
     <Tabs
@@ -29,6 +36,18 @@ export default function TabLayout() {
         tabBarIconStyle: {
           marginBottom: -3,
         },
+        tabBarItemStyle: {
+          paddingTop: 8,
+        },
+        tabBarButton: (props) => (
+          <Pressable
+            {...props}
+            onPress={(e) => {
+              handleTabPress();
+              props.onPress?.(e);
+            }}
+          />
+        ),
       }}>
       <Tabs.Screen
         name="index"

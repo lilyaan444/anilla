@@ -7,6 +7,8 @@ import { useReviews } from '../../src/hooks/useReviews';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useTranslation } from '../../src/hooks/useTranslation';
+// Ajouter l'import de Haptics
+import * as Haptics from 'expo-haptics';
 
 export default function CigarDetailScreen() {
   const { t } = useTranslation();  // Ajout de l'initialisation du hook
@@ -74,6 +76,15 @@ export default function CigarDetailScreen() {
     }
 
     try {
+      // Ajouter le retour haptique
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(
+          favorite
+            ? Haptics.NotificationFeedbackType.Warning
+            : Haptics.NotificationFeedbackType.Success
+        );
+      }
+
       if (favorite) {
         await removeFavorite(cigar.id);
       } else {
