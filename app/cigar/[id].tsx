@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Alert, TextInput, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, Image, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Modal, Dimensions, KeyboardAvoidingView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCigars } from '../../src/hooks/useCigars';
@@ -7,8 +8,10 @@ import { useReviews } from '../../src/hooks/useReviews';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { useTranslation } from '../../src/hooks/useTranslation';
-// Ajouter l'import de Haptics
 import * as Haptics from 'expo-haptics';
+import { useCigarPrices } from '../../src/hooks/useCigarPrices';
+import { LineChart } from 'react-native-chart-kit';
+import { cigarDetailStyles as styles } from '../../src/styles';
 
 export default function CigarDetailScreen() {
   const { t } = useTranslation();  // Ajout de l'initialisation du hook
@@ -17,6 +20,12 @@ export default function CigarDetailScreen() {
   const { reviews, userReview, loading: reviewsLoading, error: reviewsError, addReview, updateReview, deleteReview } = useReviews(id as string);
   const { addFavorite, removeFavorite, isFavorite, fetchFavorites } = useFavoritesStore();
   const { session } = useAuth();
+
+  // Add with other hooks
+  const { prices, loading: pricesLoading, addPrice, getAveragePrice } = useCigarPrices(id as string);
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [newPrice, setNewPrice] = useState('');
+  const [storeName, setStoreName] = useState('');
 
   const [rating, setRating] = useState(userReview?.rating || 5);
   const [comment, setComment] = useState(userReview?.comment || '');
@@ -153,8 +162,13 @@ export default function CigarDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView>
-        <Image source={{ uri: cigar.image }} style={styles.image} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <ScrollView>
+          <Image source={{ uri: cigar.image }} style={styles.image} />
 
         <TouchableOpacity
           style={styles.backButton}
@@ -191,6 +205,91 @@ export default function CigarDetailScreen() {
           </View>
 
           <View style={styles.section}>
+            <View style={styles.priceHeader}>
+              <Text style={styles.sectionTitle}>{t('cigar.price')}</Text>
+              {session && (
+                <TouchableOpacity
+                  style={styles.addPriceButton}
+                  onPress={() => setShowPriceModal(true)}>
+                  <Text style={styles.addPriceButtonText}>{t('cigar.addPrice')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {pricesLoading ? (
+              <Text style={styles.loadingText}>{t('cigar.loadingPrices')}</Text>
+            ) : prices.length > 0 ? (
+              <View>
+                <View style={styles.priceStats}>
+                  {getAveragePrice() && (
+                    <View style={styles.priceStatItem}>
+                      <Text style={styles.priceStatLabel}>{t('cigar.averagePrice')}</Text>
+                      <Text style={styles.priceStatValue}>
+                        {getAveragePrice().average.toFixed(2)}€
+                      </Text>
+                      <Text style={styles.priceStatSubtext}>
+                        ({getAveragePrice().count} {t('cigar.prices')})
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.chartContainer}>
+                  <LineChart
+                    data={{
+                      labels: [...prices]
+                        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                        .map(p => new Date(p.created_at).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })),
+                      datasets: [{
+                        data: [...prices]
+                          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                          .map(p => p.price)
+                      }]
+                    }}
+                    width={Dimensions.get('window').width - 50}
+                    height={220}
+                    chartConfig={{
+                      backgroundColor: '#FFFFFF',
+                      backgroundGradientFrom: '#FFFFFF',
+                      backgroundGradientTo: '#FFFFFF',
+                      decimalPlaces: 2,
+                      color: (opacity = 1) => `rgba(139, 69, 19, ${opacity})`,
+                      labelColor: (opacity = 1) => `rgba(139, 69, 19, ${opacity})`,
+                      propsForLabels: {
+                        fontSize: 10,
+                      },
+                      style: {
+                        borderRadius: 16
+                      },
+                      // Ajout des configurations pour le web
+                      useShadowColorFromDataset: false,
+                      propsForDots: {
+                        r: '6',
+                        strokeWidth: '2',
+                        stroke: '#8B4513'
+                      }
+                    }}
+                    bezier
+                    style={{
+                      marginVertical: 8,
+                      marginHorizontal: -15,
+                      borderRadius: 16
+                    }}
+                    withDots={Platform.OS === 'web' ? false : true}
+                    withShadow={Platform.OS === 'web' ? false : true}
+                    withScrollableDot={false}
+                    withVerticalLines={false}
+                    withHorizontalLines={true}
+                    fromZero={true}
+                  />
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.noPricesText}>{t('cigar.noPrices')}</Text>
+            )}
+          </View>
+
+          <View style={styles.section}>
             <View style={styles.reviewHeader}>
               <Text style={styles.sectionTitle}>{t('cigar.reviews')}</Text>
               {session && (
@@ -205,54 +304,59 @@ export default function CigarDetailScreen() {
             </View>
 
             {isEditing ? (
-              <View style={styles.reviewForm}>
-                <View style={styles.ratingContainer}>
-                  {[1, 2, 3, 4, 5].map((star) => (
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+              >
+                <View style={styles.reviewForm}>
+                  <View style={styles.ratingContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <TouchableOpacity
+                        key={star}
+                        onPress={() => setRating(star)}>
+                        <Ionicons
+                          name={rating >= star ? "star" : "star-outline"}
+                          size={24}
+                          color="#DAA520"
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <TextInput
+                    style={styles.reviewInput}
+                    value={comment}
+                    onChangeText={setComment}
+                    placeholder="Write your review..."
+                    multiline
+                    numberOfLines={4}
+                  />
+                  <View style={styles.reviewActions}>
                     <TouchableOpacity
-                      key={star}
-                      onPress={() => setRating(star)}>
-                      <Ionicons
-                        name={rating >= star ? "star" : "star-outline"}
-                        size={24}
-                        color="#DAA520"
-                      />
+                      style={[styles.reviewButton, styles.reviewButtonCancel]}
+                      onPress={() => {
+                        setIsEditing(false);
+                        if (userReview) {
+                          setRating(userReview.rating);
+                          setComment(userReview.comment);
+                        }
+                      }}>
+                      <Text style={styles.reviewButtonText}>Cancel</Text>
                     </TouchableOpacity>
-                  ))}
-                </View>
-                <TextInput
-                  style={styles.reviewInput}
-                  value={comment}
-                  onChangeText={setComment}
-                  placeholder="Write your review..."
-                  multiline
-                  numberOfLines={4}
-                />
-                <View style={styles.reviewActions}>
-                  <TouchableOpacity
-                    style={[styles.reviewButton, styles.reviewButtonCancel]}
-                    onPress={() => {
-                      setIsEditing(false);
-                      if (userReview) {
-                        setRating(userReview.rating);
-                        setComment(userReview.comment);
-                      }
-                    }}>
-                    <Text style={styles.reviewButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  {userReview && (
+                    {userReview && (
+                      <TouchableOpacity
+                        style={[styles.reviewButton, styles.reviewButtonDelete]}
+                        onPress={handleDeleteReview}>
+                        <Text style={styles.reviewButtonText}>Delete</Text>
+                      </TouchableOpacity>
+                    )}
                     <TouchableOpacity
-                      style={[styles.reviewButton, styles.reviewButtonDelete]}
-                      onPress={handleDeleteReview}>
-                      <Text style={styles.reviewButtonText}>Delete</Text>
+                      style={[styles.reviewButton, styles.reviewButtonSubmit]}
+                      onPress={handleReviewSubmit}>
+                      <Text style={styles.reviewButtonText}>Submit</Text>
                     </TouchableOpacity>
-                  )}
-                  <TouchableOpacity
-                    style={[styles.reviewButton, styles.reviewButtonSubmit]}
-                    onPress={handleReviewSubmit}>
-                    <Text style={styles.reviewButtonText}>Submit</Text>
-                  </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
+              </KeyboardAvoidingView>
             ) : (
               <View style={styles.reviewsList}>
                 {reviewsLoading ? (
@@ -301,209 +405,62 @@ export default function CigarDetailScreen() {
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal
+        visible={showPriceModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPriceModal(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('cigar.addPrice')}</Text>
+            <TextInput
+              style={styles.priceInput}
+              value={newPrice}
+              onChangeText={setNewPrice}
+              placeholder={t('cigar.price')}
+              keyboardType="decimal-pad"
+            />
+            <TextInput
+              style={styles.storeInput}
+              value={storeName}
+              onChangeText={setStoreName}
+              placeholder={t('cigar.storeName')}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowPriceModal(false);
+                  setNewPrice('');
+                  setStoreName('');
+                }}>
+                <Text style={styles.cancelButtonText}>{t('cigar.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.submitButton]}
+                onPress={async () => {
+                  try {
+                    const priceValue = parseFloat(newPrice);
+                    if (isNaN(priceValue)) {
+                      Alert.alert(t('common.error'), t('cigar.invalidPrice'));
+                      return;
+                    }
+                    await addPrice(priceValue, storeName);
+                    setShowPriceModal(false);
+                    setNewPrice('');
+                    setStoreName('');
+                  } catch (error) {
+                    Alert.alert(t('common.error'), (error as Error).message);
+                  }
+                }}>
+                <Text style={styles.submitButtonText}>{t('cigar.submit')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FDF5E6',
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#FF0000',
-    marginBottom: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#8B4513',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  image: {
-    width: '100%',
-    height: 300,
-  },
-  backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'web' ? 60 : 40,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  content: {
-    padding: 20,
-  },
-  name: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#8B4513',
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 24,
-  },
-  infoItem: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#CD853F',
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#8B4513',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#8B4513',
-    marginBottom: 8,
-  },
-  flavorText: {
-    fontSize: 16,
-    color: '#A0522D',
-  },
-  description: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#A0522D',
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  addReviewButton: {
-    backgroundColor: '#8B4513',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  addReviewButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  reviewForm: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  reviewInput: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    padding: 12,
-    minHeight: 100,
-    textAlignVertical: 'top',
-    marginBottom: 16,
-  },
-  reviewActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
-  reviewButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  reviewButtonCancel: {
-    backgroundColor: '#CD853F',
-  },
-  reviewButtonDelete: {
-    backgroundColor: '#DC3545',
-  },
-  reviewButtonSubmit: {
-    backgroundColor: '#8B4513',
-  },
-  reviewButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  reviewsList: {
-    gap: 12,
-  },
-  reviewItem: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-  },
-  ratingDisplay: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  reviewDate: {
-    fontSize: 12,
-    color: '#CD853F',
-  },
-  reviewText: {
-    fontSize: 14,
-    color: '#A0522D',
-    marginTop: 8,
-  },
-  noReviewsText: {
-    textAlign: 'center',
-    color: '#CD853F',
-    fontSize: 16,
-    marginTop: 20,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    borderRadius: 12,
-    marginHorizontal: 8,
-    borderWidth: 1,
-    borderColor: '#DEB887',
-  },
-  actionButtonActive: {
-    backgroundColor: '#8B4513',
-    borderColor: '#8B4513',
-  },
-  actionText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8B4513',
-  },
-  actionTextActive: {
-    color: '#FFFFFF',
-  },
-});

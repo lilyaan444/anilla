@@ -21,8 +21,8 @@ export function useReviews(cigarId: string) {
 
       const { data: { session } } = await supabase.auth.getSession();
 
-      // Fetch all reviews for this cigar
-      const { data: reviews, error: reviewsError } = await supabase
+      // First, fetch all reviews for this cigar without user filtering
+      const { data: allReviews, error: reviewsError } = await supabase
         .from('reviews')
         .select('*')
         .eq('cigar_id', cigarId)
@@ -30,18 +30,25 @@ export function useReviews(cigarId: string) {
 
       if (reviewsError) throw reviewsError;
 
-      setReviews(reviews || []);
+      setReviews(allReviews || []);
 
-      // If user is logged in, fetch their review
-      if (session) {
-        const { data: userReview } = await supabase
+      // Only fetch user review if there's an active session
+      if (session?.user?.id) {
+        const { data: userReviewData, error: userReviewError } = await supabase
           .from('reviews')
           .select('*')
           .eq('cigar_id', cigarId)
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to avoid errors
 
-        setUserReview(userReview);
+        if (userReviewError && userReviewError.code !== 'PGRST116') {
+          // Only throw if it's not a "no results" error
+          throw userReviewError;
+        }
+
+        setUserReview(userReviewData || null);
+      } else {
+        setUserReview(null);
       }
     } catch (err) {
       console.error('Error fetching reviews:', err);
@@ -57,7 +64,7 @@ export function useReviews(cigarId: string) {
       setError(null);
 
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         throw new Error('Please sign in to add a review');
       }
@@ -89,7 +96,7 @@ export function useReviews(cigarId: string) {
       setError(null);
 
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         throw new Error('Please sign in to update your review');
       }
@@ -118,7 +125,7 @@ export function useReviews(cigarId: string) {
       setError(null);
 
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         throw new Error('Please sign in to delete your review');
       }

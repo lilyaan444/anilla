@@ -67,6 +67,16 @@ export default {
     signInRequired: 'Inicio de sesión requerido',
     signInMessage: 'Por favor, inicia sesión para continuar',
     signIn: 'Iniciar sesión',
+    price: 'Precio',
+    prices: 'Precios',
+    addPrice: 'Añadir precio',
+    storeName: 'Nombre de la tienda',
+    averagePrice: 'Precio promedio',
+    priceHistory: 'Historial de precios',
+    currency: 'Moneda',
+    purchaseDate: 'Fecha de compra',
+    noPrices: 'Sin precios registrados',
+    loadingPrices: 'Cargando precios...',
   },
   createCigar: {
     title: 'Nuevo Cigarro',
@@ -95,6 +105,8 @@ export default {
     format: 'Formato',
     flavor: 'Perfil de Sabor',
     description: 'Descripción',
+    price: 'Precio',
+    currency: 'Moneda',
   },
   navigation: {
     home: 'Inicio',
@@ -102,4 +114,141 @@ export default {
     favorites: 'Favoritos',
     profile: 'Perfil',
   },
+  origins: {
+    cuba: 'Cuba',
+    dominicanRepublic: 'República Dominicana',
+    nicaragua: 'Nicaragua',
+    honduras: 'Honduras',
+    mexico: 'México',
+    brazil: 'Brasil',
+    costaRica: 'Costa Rica',
+    ecuador: 'Ecuador',
+    peru: 'Perú',
+    colombia: 'Colombia',
+    panama: 'Panamá',
+    indonesia: 'Indonesia',
+    cameroon: 'Camerún',
+    philippines: 'Filipinas',
+    jamaica: 'Jamaica',
+    usa: 'Estados Unidos',
+  },
+  formats: {
+    robusto: 'Robusto',
+    corona: 'Corona',
+    churchill: 'Churchill',
+    toro: 'Toro',
+    gordo: 'Gordo',
+    lancero: 'Lancero',
+    petitCorona: 'Petit Corona',
+    doubleCorona: 'Doble Corona',
+    belicoso: 'Belicoso',
+    torpedo: 'Torpedo',
+    perfecto: 'Perfecto',
+    pyramide: 'Pirámide',
+    culebra: 'Culebra',
+    panatela: 'Panatela',
+    rothschild: 'Rothschild',
+    lonsdale: 'Lonsdale',
+    ninfas: 'Ninfas',
+    diadema: 'Diadema',
+    presidente: 'Presidente',
+    gigante: 'Gigante',
+  },
+  flavors: {
+    earthy: 'Terroso',
+    woody: 'Amaderado',
+    spicy: 'Picante',
+    sweet: 'Dulce',
+    creamy: 'Cremoso',
+    nutty: 'Nueces',
+    leather: 'Cuero',
+    coffee: 'Café',
+    chocolate: 'Chocolate',
+    cedar: 'Cedro',
+    pepper: 'Pimienta',
+    vanilla: 'Vainilla',
+    floral: 'Floral',
+    citrus: 'Cítricos',
+    caramel: 'Caramelo',
+    almond: 'Almendra',
+    cinnamon: 'Canela',
+    cocoa: 'Cacao',
+    honey: 'Miel',
+    molasses: 'Melaza',
+    oak: 'Roble',
+    pineNuts: 'Piñones',
+    raisins: 'Pasas',
+    roasted: 'Tostado',
+    tobacco: 'Tabaco',
+    walnut: 'Nuez',
+    herbal: 'Herbáceo',
+    mineral: 'Mineral',
+    musty: 'Mohoso',
+    nutmeg: 'Nuez moscada',
+    peanut: 'Cacahuete',
+    blackPepper: 'Pimienta negra',
+    redPepper: 'Pimienta roja',
+    toast: 'Pan tostado',
+    hay: 'Heno',
+    grass: 'Hierba',
+    barnyard: 'Establo',
+    malt: 'Malta',
+    espresso: 'Espresso',
+    clove: 'Clavo',
+  },
+  flavorswheel: {
+    wheelTitle: 'Rueda de Sabores de Puros',
+    wheelSubtitle: 'Explora los perfiles de sabor',
+    tastingGuide: 'Guía de Degustación',
+    categories: {
+      'Terre & Bois': {
+        name: 'Tierra y Madera',
+        howToIdentify: 'Estas notas fundamentales suelen formar el perfil base. Exhale lentamente por la nariz mientras mantiene el humo en la boca para percibirlas mejor.'
+      },
+      'Épices': {
+        name: 'Especias',
+        howToIdentify: 'Las especias suelen revelarse a mitad de la fumada. Ruede el humo en su lengua para detectar las diferentes notas.'
+      },
+      'Sucré': {
+        name: 'Dulce',
+        howToIdentify: 'Las notas dulces son sutiles y naturales. Búsquelas particularmente al principio de la calada y en retroolfación.'
+      },
+      'Torréfié': {
+        name: 'Tostado',
+        howToIdentify: 'Estas notas suelen desarrollarse a mitad y final de la fumada. La retroolfación es esencial para apreciarlas plenamente.'
+      },
+      'Floral': {
+        name: 'Floral',
+        howToIdentify: 'Las notas florales están más presentes al inicio de la fumada. Respire suavemente el humo por la nariz para detectarlas.'
+      },
+      'Fruits': {
+        name: 'Frutas',
+        howToIdentify: 'Las notas frutales son más evidentes al principio de la fumada. A menudo se mezclan con notas dulces.'
+      },
+      'Herbacé': {
+        name: 'Herbáceo',
+        howToIdentify: 'Las notas herbáceas son ligeras, percibidas especialmente al inicio de la fumada y en retroolfación.'
+      },
+      'Minéral': {
+        name: 'Mineral',
+        howToIdentify: 'Las notas minerales son más sutiles, percibidas a mitad de la fumada y a menudo en segundo plano.'
+      },
+      'Animal': {
+        name: 'Animal',
+        howToIdentify: 'Las notas animales suelen surgir al final de la fumada, con cierta redondez y complejidad.'
+      },
+      'Fermenté': {
+        name: 'Fermentado',
+        howToIdentify: 'Las notas fermentadas son muy distintivas, percibidas especialmente en nariz y al inicio de la degustación.'
+      },
+      'Alcools & Spiritueux': {
+        name: 'Alcoholes y Espirituosos',
+        howToIdentify: 'Estas notas aparecen a menudo en puros envejecidos en barrica o naturalmente complejos.'
+      },
+      'Fruits Secs & Noix': {
+        name: 'Frutos Secos y Nueces',
+        howToIdentify: 'Estas notas suelen estar presentes a mitad de la fumada, aportando una dimensión cremosa.'
+      }
+    }
+  }
 };

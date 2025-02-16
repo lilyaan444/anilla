@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Platform, Alert, Modal, FlatList, Dimensions } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, Platform, Alert, Modal, FlatList, Dimensions, KeyboardAvoidingView } from 'react-native';
 import { Portal, PortalProvider, PortalHost } from '@gorhom/portal';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,19 +8,25 @@ import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/providers/AuthProvider';
 import { ActivityIndicator } from 'react-native';
 import { useTranslation } from '../src/hooks/useTranslation';
+import { createCigarStyles as styles } from '../src/styles';
+import { useCigarData } from '../src/data/cigarData';
 
 export default function CreateCigarScreen() {
   const { t } = useTranslation();
+  const { origins, formats, flavorKeywords } = useCigarData();
   const { session } = useAuth();
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
   const [uploadProgress, setUploadProgress] = useState('');  // Ajout de l'état uploadProgress
+  // In your form state, add price
   const [formData, setFormData] = useState({
     name: '',
     origin: '',
     format: '',
     flavor: '',
     description: '',
+    price: '', // Add this line
+    store_name: '', // Add this line
   });
 
   const [showOriginPicker, setShowOriginPicker] = useState(false);
@@ -28,52 +34,17 @@ export default function CreateCigarScreen() {
   const [flavorSuggestions, setFlavorSuggestions] = useState([]);
   const [inputPosition, setInputPosition] = useState({ y: 0 });
 
-  const origins = [
-    'Cuba',
-    'Dominican Republic',
-    'Nicaragua',
-    'Honduras',
-    'Mexico',
-    'Brazil',
-    'Costa Rica',
-    'Ecuador',
-  ];
-
-  // Modification des textes statiques
-  const formats = [
-    'Robusto',
-    'Corona',
-    'Churchill',
-    'Toro',
-    'Gordo',
-    'Lancero',
-    'Petit Corona',
-    'Double Corona',
-  ];
-
-  const flavorKeywords = [
-    'Terreux',
-    'Boisé',
-    'Épicé',
-    'Sucré',
-    'Crémeux',
-    'Noix',
-    'Cuir',
-    'Café',
-    'Chocolat',
-    'Cèdre',
-    'Poivre',
-    'Vanille',
-    'Floral',
-    'Agrumes',
-    'Caramel',
-  ];
 
   const handleFlavorChange = (text) => {
     setFormData(prev => ({ ...prev, flavor: text }));
-    if (text.length > 0) {
+
+    // Get the current word being typed (after the last comma)
+    const currentWord = text.split(',').pop().trim();
+
+    if (currentWord.length > 0) {
       const suggestions = flavorKeywords.filter(keyword =>
-        keyword.toLowerCase().includes(text.toLowerCase())
+        keyword.toLowerCase().includes(currentWord.toLowerCase()) &&
+        !text.toLowerCase().includes(keyword.toLowerCase())
       );
       setFlavorSuggestions(suggestions);
     } else {
@@ -82,9 +53,12 @@ export default function CreateCigarScreen() {
   };
 
   const handleFlavorSuggestionPress = (suggestion) => {
-    const currentFlavors = formData.flavor.split(',').map(f => f.trim()).filter(Boolean);
-    const newFlavors = [...new Set([...currentFlavors, suggestion])];
-    setFormData(prev => ({ ...prev, flavor: newFlavors.join(', ') }));
+    const flavors = formData.flavor.split(',').map(f => f.trim()).filter(Boolean);
+    // Remove the partial word being typed
+    flavors.pop();
+    // Add the selected suggestion
+    flavors.push(suggestion);
+    setFormData(prev => ({ ...prev, flavor: flavors.join(', ') + ', ' }));
     setFlavorSuggestions([]);
   };
 
@@ -165,7 +139,7 @@ export default function CreateCigarScreen() {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: [ImagePicker.MediaType.Images],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.5,
@@ -173,10 +147,11 @@ export default function CreateCigarScreen() {
         maxHeight: 675,
       });
 
-      if (!result.canceled) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         setImage(result.assets[0].uri);
       }
     } catch (error) {
+      console.error('Camera error:', error);
       Alert.alert('Error', 'Failed to take photo');
     }
   };
@@ -195,74 +170,75 @@ export default function CreateCigarScreen() {
 
     const handleSubmit = async () => {
       if (!image) {
-        Alert.alert('Error', 'Please add an image');
+        Alert.alert(t('createCigar.error'), t('createCigar.imageRequired'));
         return;
       }
 
       if (!formData.name || !formData.origin || !formData.format || !formData.flavor || !formData.description) {
-        Alert.alert('Error', 'Please fill in all fields');
+        Alert.alert(t('createCigar.error'), t('createCigar.fillAllFields'));
         return;
       }
 
       setLoading(true);
-      setUploadProgress('Préparation de l\'image...');
+      setUploadProgress(t('createCigar.preparingImage'));
 
       try {
         if (!session?.user) {
           throw new Error('User must be authenticated to upload images');
         }
 
-        setUploadProgress('Traitement de l\'image...');
+        setUploadProgress(t('createCigar.processingImage'));
 
-        let blob;
-        if (Platform.OS === 'web' && image.startsWith('data:')) {
-          // Gestion spéciale pour les images base64 sur le web
-          const base64Data = image.split(',')[1];
-          const byteCharacters = atob(base64Data);
-          const byteArrays = [];
+        let fileToUpload;
+        if (Platform.OS === 'web') {
+          // Gestion spéciale pour le web
+          if (image.startsWith('data:')) {
+            const base64Data = image.split(',')[1];
+            const byteCharacters = atob(base64Data);
+            const byteArrays = [];
 
-          for (let i = 0; i < byteCharacters.length; i += 512) {
-            const slice = byteCharacters.slice(i, i + 512);
-            const byteNumbers = new Array(slice.length);
-            for (let j = 0; j < slice.length; j++) {
-              byteNumbers[j] = slice.charCodeAt(j);
+            for (let i = 0; i < byteCharacters.length; i += 512) {
+              const slice = byteCharacters.slice(i, i + 512);
+              const byteNumbers = new Array(slice.length);
+              for (let j = 0; j < slice.length; j++) {
+                byteNumbers[j] = slice.charCodeAt(j);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              byteArrays.push(byteArray);
             }
-            const byteArray = new Uint8Array(byteNumbers);
-            byteArrays.push(byteArray);
-          }
 
-          blob = new Blob(byteArrays, { type: 'image/jpeg' });
+            fileToUpload = new Blob(byteArrays, { type: 'image/jpeg' });
+          } else {
+            const response = await fetch(image);
+            fileToUpload = await response.blob();
+          }
         } else {
-          const response = await fetch(image);
-          if (!response.ok) {
-            throw new Error('Failed to fetch image data');
-          }
-          blob = await response.blob();
+          // Pour iOS et Android, utiliser directement l'URI du fichier
+          fileToUpload = {
+            uri: image,
+            name: 'upload.jpg',
+            type: 'image/jpeg'
+          };
         }
 
-        if (!blob) {
-          throw new Error('Failed to create image blob');
+        if (!fileToUpload) {
+          throw new Error('Failed to prepare image for upload');
         }
 
-        setUploadProgress('Upload de l\'image...');
-
-        // Vérifier la taille du blob
-        if (blob.size > 5000000) { // 5MB limit
-          throw new Error('Image size too large. Please choose a smaller image.');
-        }
+        setUploadProgress(t('createCigar.uploadingImage'));
 
         // Créer un nom de fichier sécurisé
-        const fileName = formData.name
+        const fileName = `${Date.now()}-${formData.name
           .toLowerCase()
           .replace(/[^a-z0-9]/g, '-')
           .replace(/-+/g, '-')
-          .trim();
-        const imagePath = `cigars/${Date.now()}-${fileName}`;
+          .trim()}.jpg`;
+        const imagePath = `cigars/${fileName}`;
 
-        // Upload avec type MIME explicite
+        // Upload du fichier
         const { error: uploadError } = await supabase.storage
           .from('cigar-images')
-          .upload(imagePath, blob, {
+          .upload(imagePath, fileToUpload, {
             contentType: 'image/jpeg',
             cacheControl: '3600',
             upsert: false
@@ -279,35 +255,47 @@ export default function CreateCigarScreen() {
           .getPublicUrl(imagePath);
 
         // Créer l'enregistrement dans la base de données
-        const { error: insertError } = await supabase
+        // Create cigar without price
+        const { data: cigarData, error: insertError } = await supabase
           .from('cigars')
           .insert([{
-            ...formData,
+            name: formData.name,
+            origin: formData.origin,
+            format: formData.format,
+            flavor: formData.flavor,
+            description: formData.description,
             image: publicUrl,
             created_by: session.user.id
-          }]);
+          }])
+          .select()
+          .single();
 
         if (insertError) {
           throw insertError;
         }
 
-        // Réinitialiser le formulaire
+        // If price is provided, add it to cigar_prices table
+        if (formData.price) {
+          const { error: priceError } = await supabase
+            .from('cigar_prices')
+            .insert({
+              cigar_id: cigarData.id,
+              user_id: session.user.id,
+              price: parseFloat(formData.price),
+              store_name: formData.store_name || null
+            });
+
+          if (priceError) {
+            console.error('Error adding price:', priceError);
+            // Continue even if price insertion fails
+          }
+        }
+
+        // Reset form and redirect
         resetForm();
 
         // Afficher la confirmation et rediriger
-        if (Platform.OS === 'web') {
-          alert('Cigare créé avec succès !');
-          router.back();
-        } else {
-          Alert.alert(
-            'Succès !',
-            'Votre cigare a été créé avec succès.',
-            [{
-              text: 'OK',
-              onPress: () => router.back()
-            }]
-          );
-        }
+router.replace('/');
 
       } catch (error) {
         console.error('Error details:', error);
@@ -320,7 +308,12 @@ export default function CreateCigarScreen() {
     };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: '#FDF5E6' }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      enabled={Platform.OS === 'ios'}
+    >
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -333,7 +326,13 @@ export default function CreateCigarScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={true}
+        bounces={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         <View style={styles.formWrapper}>
           <TouchableOpacity
             style={styles.imageContainer}
@@ -343,7 +342,7 @@ export default function CreateCigarScreen() {
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="image-outline" size={48} color="#CD853F" />
-                <Text style={styles.imagePlaceholderText}>Ajouter une photo</Text>
+                <Text style={styles.imagePlaceholderText}>{t('createCigar.addPhoto')}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -353,13 +352,13 @@ export default function CreateCigarScreen() {
               style={[styles.imageButton, styles.galleryButton]}
               onPress={pickImage}>
               <Ionicons name="images-outline" size={24} color="#8B4513" />
-              <Text style={styles.imageButtonText}>Galerie</Text>
+              <Text style={styles.imageButtonText}>{t('createCigar.gallery')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.imageButton, styles.cameraButton]}
               onPress={takePhoto}>
               <Ionicons name="camera-outline" size={24} color="#8B4513" />
-              <Text style={styles.imageButtonText}>Appareil photo</Text>
+              <Text style={styles.imageButtonText}>{t('createCigar.camera')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -394,6 +393,39 @@ export default function CreateCigarScreen() {
                   {formData.format || t('createCigar.formatPlaceholder')}
                 </Text>
               </TouchableOpacity>
+            </View>
+
+            <View style={[styles.inputContainer, { zIndex: 2 }]}>
+              <Text style={styles.label}>{t('cigar.price')}</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.price}
+                onChangeText={(text) => {
+                  // Remplacer directement la virgule par un point
+                  const sanitizedText = text.replace(',', '.');
+                  const numericValue = sanitizedText.replace(/[^0-9.]/g, '');
+                  if (numericValue.split('.').length <= 2) {
+                    setFormData(prev => ({ ...prev, price: numericValue }));
+                  }
+                }}
+                placeholder={t('cigar.price')}
+                keyboardType={Platform.select({
+                  ios: 'numbers-and-punctuation',
+                  android: 'decimal-pad',
+                  default: 'decimal-pad'
+                })}
+                returnKeyType="done"
+              />
+            </View>
+
+            <View style={[styles.inputContainer, { zIndex: 2 }]}>
+              <Text style={styles.label}>{t('cigar.storeName')}</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.store_name}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, store_name: text }))}
+                placeholder={t('cigar.storeName')}
+              />
             </View>
 
             <View style={[styles.inputContainer, { zIndex: 2 }]}>
@@ -443,7 +475,7 @@ export default function CreateCigarScreen() {
                 </View>
               ) : (
                 <Text style={styles.submitButtonText}>
-                  Créer le cigare
+                  {t('createCigar.create')}
                 </Text>
               )}
             </TouchableOpacity>
@@ -520,301 +552,6 @@ export default function CreateCigarScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
     );
 }
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DEB887',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#8B4513',
-  },
-  modalItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  modalItemText: {
-    fontSize: 16,
-    color: '#8B4513',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FDF5E6',
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'web' ? 40 : 60,
-    paddingBottom: 20,
-    backgroundColor: '#FDF5E6',
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 12,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: Platform.OS === 'web' ? 28 : 24,
-    fontWeight: '700',
-    color: '#8B4513',
-  },
-  subtitle: {
-    fontSize: Platform.OS === 'web' ? 16 : 14,
-    color: '#CD853F',
-    marginTop: 4,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  imageContainer: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-    ...(Platform.OS === 'web'
-      ? {
-          boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)'
-        }
-      : {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-        }
-    ),
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  imagePlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imagePlaceholderText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#CD853F',
-  },
-  imageButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginBottom: 24,
-  },
-  imageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#DEB887',
-    gap: 8,
-  },
-  imageButtonText: {
-    color: '#8B4513',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  formWrapper: {
-    position: 'relative',
-    zIndex: 1,
-  },
-  form: {
-    gap: 16,
-    position: 'relative',
-  },
-  inputContainer: {
-    gap: 8,
-    position: 'relative',
-    overflow: 'visible',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8B4513',
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DEB887',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#8B4513',
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  submitButton: {
-    backgroundColor: '#8B4513',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-    minHeight: 56,
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#8B4513',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  signInButton: {
-    backgroundColor: '#8B4513',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingTop: Platform.OS === 'web' ? 80 : 100,
-    zIndex: 1001,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backdropFilter: 'blur(4px)',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
-    maxHeight: '80%',
-    elevation: 25,
-    position: 'relative',
-    ...(Platform.OS === 'web'
-      ? {
-          boxShadow: '0px -4px 16px rgba(0, 0, 0, 0.2)'
-        }
-      : {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 16,
-        }
-    ),
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DEB887',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#8B4513',
-  },
-  modalItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DEB887',
-  },
-  modalItemText: {
-    fontSize: 16,
-    color: '#8B4513',
-  },
-  suggestionsContainer: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#DEB887',
-    marginTop: 4,
-    maxHeight: 150, // Limiter la hauteur maximale
-    zIndex: 1000,
-    elevation: 5,
-    ...(Platform.OS === 'web'
-      ? {
-          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)'
-        }
-      : {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-        }
-    ),
-  },
-  suggestionItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DEB887',
-  },
-  suggestionText: {
-    fontSize: 14,
-    color: '#8B4513',
-  },
-  inputText: {
-    fontSize: 16,
-    color: '#8B4513',
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: '#CD853F',
-  },
-  signInButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

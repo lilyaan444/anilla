@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions, Platform, Alert } from 'react-native';
+import { View, Text, Dimensions, Platform } from 'react-native';
 import { useState, useCallback } from 'react';
 import Svg, { Path, G, Text as SvgText, Circle, Stop, LinearGradient, Defs, TSpan } from 'react-native-svg';import { GestureHandlerRootView, TapGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
@@ -20,14 +20,32 @@ import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 // Ajouter l'import Haptics
 import * as Haptics from 'expo-haptics';
-
+import { flavorStyles as styles } from '../../src/styles';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 const WHEEL_SIZE = width * 0.85; // Légèrement plus petit pour plus d'élégance
 const WHEEL_CENTER = WHEEL_SIZE / 2;
 const TEXT_RADIUS = WHEEL_SIZE / 3.2;
 
+interface FlavorItem {
+  name: string;
+  description: string;
+  howToIdentify: string;
+}
+
+interface Category {
+  gradient: [string, string];
+  howToIdentify: string;
+  items: (string | FlavorItem)[];
+}
+
+interface Categories {
+  [key: string]: Category;
+}
+
 export default function FlavorWheel() {
+  const { t } = useTranslation();
   const [fontsLoaded] = useFonts({
     'Playfair': require('../../assets/fonts/PlayfairDisplay-Bold.ttf'),
   });
@@ -282,8 +300,8 @@ export default function FlavorWheel() {
             <Ionicons name="arrow-back" size={24} color="#8B4513" />
           </TouchableOpacity>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Roue des Saveurs de Cigares</Text>
-            <Text style={styles.subtitle}>Explorez les profils gustatifs</Text>
+            <Text style={styles.title}>{t('flavorswheel.wheelTitle')}</Text>
+            <Text style={styles.subtitle}>{t('flavorswheel.wheelSubtitle')}</Text>
           </View>
         </View>
 
@@ -295,16 +313,16 @@ export default function FlavorWheel() {
           <PanGestureHandler onGestureEvent={panGestureHandler}>
             <Animated.View style={[styles.detailsContainer, detailsPanelStyle]}>
               <View style={styles.detailsHandle} />
-              <Text style={styles.categoryTitle}>{selectedCategory}</Text>
-              <Text style={styles.categoryTip}>Guide de dégustation</Text>
+              <Text style={styles.categoryTitle}>{t(`flavorswheel.categories.${selectedCategory}.name`)}</Text>
+              <Text style={styles.categoryTip}>{t('flavorswheel.tastingGuide')}</Text>
               <Text style={styles.tipText}>
-                {CATEGORIES[selectedCategory].howToIdentify}
+                {t(`flavorswheel.categories.${selectedCategory}.howToIdentify`)}
               </Text>
               <View style={styles.flavorsList}>
-                {CATEGORIES[selectedCategory].items.map((flavor) => (
+                {CATEGORIES[selectedCategory]?.items.map((flavor) => (
                   <TouchableOpacity
                     key={typeof flavor === 'string' ? flavor : flavor.name}
-                    onPress={() => typeof flavor === 'object' && showFlavorDetail(flavor)}
+                    onPress={() => typeof flavor === 'object' && showFlavorDetail(flavor as FlavorItem)}
                     style={styles.flavorItem}
                   >
                     <Text style={styles.flavorName}>
@@ -326,162 +344,3 @@ export default function FlavorWheel() {
     </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FDF5E6',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'web' ? 40 : 60,
-    paddingBottom: 20,
-    backgroundColor: '#FDF5E6',
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 12,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#8B4513',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#CD853F',
-    marginTop: 4,
-  },
-  wheelContainer: {
-    width: '100%',
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  detailsContainer: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    paddingTop: 12,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    ...(Platform.OS === 'web'
-      ? {
-          boxShadow: '0px -2px 4px rgba(0, 0, 0, 0.1)'
-        }
-      : {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 5,
-        }
-    ),
-  },
-  categoryTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#8B4513',
-    marginBottom: 10,
-  },
-  flavorsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  flavorItem: {
-    backgroundColor: '#FDF5E6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  categoryTip: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#8B4513',
-    marginTop: 10,
-  },
-  tipText: {
-    fontSize: 14,
-    color: '#666',
-    marginVertical: 10,
-    lineHeight: 20,
-  },
-  flavorName: {
-    color: '#8B4513',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  detailsHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#DDD',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 15,
-  },
-  detailsContainer: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    paddingTop: 12,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    ...(Platform.OS === 'web'
-      ? {
-          boxShadow: '0px -2px 4px rgba(0, 0, 0, 0.1)'
-        }
-      : {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 5,
-        }
-    ),
-  },
-  categoryTitle: {
-    fontSize: 24,
-    fontFamily: 'Playfair',
-    color: '#8B4513',
-    marginBottom: 16,
-  },
-  flavorsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  flavorItem: {
-    backgroundColor: '#FDF5E6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  categoryTip: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#8B4513',
-    marginTop: 10,
-  },
-  tipText: {
-    fontSize: 14,
-    color: '#666',
-    marginVertical: 10,
-    lineHeight: 20,
-  },
-  flavorName: {
-    color: '#8B4513',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-});
