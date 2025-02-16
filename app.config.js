@@ -16,8 +16,25 @@ export default {
       buildNumber: "1.0.0",
       config: {
         usesNonExemptEncryption: false
+      },
+      // Add codegen config
+      reactNativeCodegen: {
+        enabled: true
       }
     },
+    plugins: [
+      "expo-router",
+      [
+        "react-native-reanimated",
+        {
+          "ios": {
+            "codegenConfig": {
+              "enabled": true
+            }
+          }
+        }
+      ]
+    ],
     android: {
       package: "com.lilyaan444.anillacigarexplorer"
     },
