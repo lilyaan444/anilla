@@ -157,4 +157,29 @@ export const flavorStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  modeSelector: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  modeButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginHorizontal: 5,
+    borderRadius: 20,
+    backgroundColor: '#FDF5E6',
+    borderWidth: 1,
+    borderColor: '#8B4513',
+  },
+  modeButtonActive: {
+    backgroundColor: '#8B4513',
+  },
+  modeButtonText: {
+    color: '#8B4513',
+    fontWeight: 'bold',
+  },
+  modeButtonTextActive: {
+    color: '#FDF5E6',
+  },
 });
