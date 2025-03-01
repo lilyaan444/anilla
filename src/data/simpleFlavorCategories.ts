@@ -27,7 +27,7 @@ export const LEVEL_1_CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Picotements légers à moyens, chaleur sur la langue et le palais, sensation de réchauffement'
       }
     ],
-    gradient: ['#D2691E', '#8B4513'],
+    gradient: ['#D2691E', '#C4A484'],
     howToIdentify: 'Notez les sensations de chaleur et de picotement qui persistent après chaque bouffée'
   },
   'Terreux': {
@@ -39,7 +39,7 @@ export const LEVEL_1_CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Rappelle les sensations de forêt humide, de sous-bois et d\'éléments naturels'
       }
     ],
-    gradient: ['#8B4513', '#654321'],
+    gradient: ['#8B4513', '#5D2906'],
     howToIdentify: 'Évoque la nature, le sol fertile, les feuilles d\'automne ou le cuir travaillé'
   },
   'Boisé': {
@@ -51,7 +51,7 @@ export const LEVEL_1_CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Évocation de bois noble, parfois fumé ou toast, similaire à certains whiskies vieillis en fût'
       }
     ],
-    gradient: ['#A0522D', '#654321'],
+    gradient: ['#A0522D', '#7E3517'],
     howToIdentify: 'Recherchez des sensations qui rappellent diverses essences de bois, du cèdre au chêne'
   },
   'Amer': {
@@ -63,11 +63,11 @@ export const LEVEL_1_CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Sensation d\'amertume qui se développe progressivement, similaire au café noir ou au chocolat noir'
       }
     ],
-    gradient: ['#654321', '#3E2723'],
+    gradient: ['#654321', '#4A3520'],
     howToIdentify: 'L\'amertume se ressent principalement sur l\'arrière de la langue et peut persister'
   },
   'Sucré': {
-    color: '#C4A484',
+    color: '#CD853F',
     items: [
       {
         name: 'Sucré',
@@ -75,11 +75,11 @@ export const LEVEL_1_CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Douceur naturelle rappelant le caramel, le miel ou certains fruits secs'
       }
     ],
-    gradient: ['#C4A484', '#A67B5B'],
+    gradient: ['#CD853F', '#A67035'],
     howToIdentify: 'Recherchez une douceur naturelle en début de dégustation, particulièrement présente en rétro-olfaction'
   },
   'Floral': {
-    color: '#E6E6FA',
+    color: '#BA55D3',
     items: [
       {
         name: 'Floral',
@@ -87,7 +87,7 @@ export const LEVEL_1_CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Arômes légers et parfumés, souvent présents en rétro-olfaction'
       }
     ],
-    gradient: ['#E6E6FA', '#D8BFD8'],
+    gradient: ['#BA55D3', '#9932CC'],
     howToIdentify: 'Ces notes se perçoivent souvent par le nez après l\'expiration, créant une sensation parfumée et élégante'
   },
   'Fruité': {
@@ -99,7 +99,7 @@ export const LEVEL_1_CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Notes fruitées qui apportent fraîcheur ou concentration selon le type de fruit'
       }
     ],
-    gradient: ['#FF7F50', '#E9967A'],
+    gradient: ['#FF7F50', '#E9673A'],
     howToIdentify: 'Recherchez des sensations qui évoquent différents fruits, des agrumes aux fruits secs'
   }
 };
@@ -730,7 +730,7 @@ export const LEVEL_4_CATEGORIES: Record<string, {
       beverages: ['Sancerre', 'Gin premium', 'Vodka glacée', 'Eau minérale froide'],
       foods: ['Crustacés', 'Fromages de chèvre secs', 'Tartares', 'Plats crus']
     },
-    characteristics: 'Notes minérales vives et tranchantes, avec un aspect presque électrique',
+    characteristics: 'Notes minérales vives et tranchantes, avec un aspect presque électrique ou pétillant',
     foundIn: ['Cigares cubains légers', 'Certains cigares du Honduras', 'Mélanges avec tabac Volado']
   },
   'Charbon': {

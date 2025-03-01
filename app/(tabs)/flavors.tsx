@@ -1,5 +1,5 @@
 import { View, Text, Dimensions, Platform } from 'react-native';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,

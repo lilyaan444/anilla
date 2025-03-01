@@ -27,10 +27,21 @@ export const ComplexFlavorWheel: React.FC<ComplexFlavorWheelProps> = ({
       <Defs>
         {Object.keys(CATEGORIES).map((category, index) => {
           const [startColor, endColor] = CATEGORIES[category].gradient;
+          const angle = (index * (360 / Object.keys(CATEGORIES).length));
+
           return (
-            <LinearGradient key={index} id={`gradient-${index}`} x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor={startColor} />
-              <Stop offset="100%" stopColor={endColor} />
+            <LinearGradient
+              key={index}
+              id={`gradient-${index}`}
+              x1="0.5"
+              y1="0"
+              x2="0.5"
+              y2="1"
+              gradientTransform={`rotate(${45 + angle}, 0.5, 0.5)`}
+            >
+              <Stop offset="0%" stopColor={startColor} stopOpacity="0.95" />
+              <Stop offset="50%" stopColor={endColor} stopOpacity="0.85" />
+              <Stop offset="100%" stopColor={startColor} stopOpacity="0.95" />
             </LinearGradient>
           );
         })}
@@ -105,6 +116,17 @@ export const ComplexFlavorWheel: React.FC<ComplexFlavorWheelProps> = ({
           stroke="#8B4513"
           strokeWidth={2}
         />
+
+        {/* Texte au centre */}
+        <SvgText
+          fill="#8B4513"
+          fontSize={16}
+          fontWeight="bold"
+          textAnchor="middle"
+          alignmentBaseline="middle"
+        >
+          SAVEURS
+        </SvgText>
       </G>
     </Svg>
   );

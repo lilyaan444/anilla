@@ -2,12 +2,13 @@ import { View, Text, ScrollView, Image, TouchableOpacity, Pressable, ActivityInd
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCigars } from '../../src/hooks/useCigars';
 import { useReviews } from '../../src/hooks/useReviews';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { useCigarPrices } from '../../src/hooks/useCigarPrices';
 import { homeStyles as styles } from '../../src/styles';
+import { supabase } from '../../src/lib/supabase'; // Add this import
 
 type Filter = {
   origin?: string;
@@ -22,6 +23,51 @@ export default function HomeScreen() {
   const [activeFilters, setActiveFilters] = useState<Filter>({});
   const [refreshing, setRefreshing] = useState(false);
   const { cigars, loading, error, refetch } = useCigars();
+  const [cigarData, setCigarData] = useState<{[key: string]: {avgPrice: number, avgRating: number, priceCount: number, reviewCount: number}}>({});
+
+  // Fetch all prices and reviews for sorting
+  useEffect(() => {
+    const fetchCigarData = async () => {
+      const data: {[key: string]: {avgPrice: number, avgRating: number, priceCount: number, reviewCount: number}} = {};
+
+      for (const cigar of cigars) {
+        try {
+          const { data: reviews } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('cigar_id', cigar.id);
+
+          const { data: prices } = await supabase
+            .from('cigar_prices')
+            .select('*')
+            .eq('cigar_id', cigar.id);
+
+          const avgRating = reviews && reviews.length > 0
+            ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+            : 0;
+
+          const avgPrice = prices && prices.length > 0
+            ? prices.reduce((sum, p) => sum + p.price, 0) / prices.length
+            : Infinity;
+
+          data[cigar.id] = {
+            avgPrice,
+            avgRating,
+            priceCount: prices ? prices.length : 0,
+            reviewCount: reviews ? reviews.length : 0
+          };
+        } catch (err) {
+          console.error(`Error fetching data for cigar ${cigar.id}:`, err);
+        }
+      }
+
+      setCigarData(data);
+    };
+
+    if (cigars.length > 0) {
+      fetchCigarData();
+    }
+  }, [cigars]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -45,26 +91,28 @@ export default function HomeScreen() {
       return true;
     });
 
-    if (activeFilters.sort) {
+    if (activeFilters.sort && Object.keys(cigarData).length > 0) {
       filtered = [...filtered].sort((a, b) => {
-        const pricesA = useCigarPrices(a.id).prices;
-        const pricesB = useCigarPrices(b.id).prices;
-        const reviewsA = useReviews(a.id).reviews;
-        const reviewsB = useReviews(b.id).reviews;
-
-        const avgPriceA = pricesA.length ? pricesA.reduce((sum, p) => sum + p.price, 0) / pricesA.length : Infinity;
-        const avgPriceB = pricesB.length ? pricesB.reduce((sum, p) => sum + p.price, 0) / pricesB.length : Infinity;
-        const avgRatingA = reviewsA.length ? reviewsA.reduce((sum, r) => sum + r.rating, 0) / reviewsA.length : 0;
-        const avgRatingB = reviewsB.length ? reviewsB.reduce((sum, r) => sum + r.rating, 0) / reviewsB.length : 0;
+        const dataA = cigarData[a.id] || { avgPrice: Infinity, avgRating: 0, priceCount: 0, reviewCount: 0 };
+        const dataB = cigarData[b.id] || { avgPrice: Infinity, avgRating: 0, priceCount: 0, reviewCount: 0 };
 
         switch (activeFilters.sort) {
           case 'cheaper':
-            return avgPriceA - avgPriceB;
+            // Tri par prix (du moins cher au plus cher)
+            if (dataA.avgPrice === Infinity && dataB.avgPrice === Infinity) return 0;
+            if (dataA.avgPrice === Infinity) return 1;
+            if (dataB.avgPrice === Infinity) return -1;
+            return dataA.avgPrice - dataB.avgPrice;
           case 'expensive':
-            return avgPriceB - avgPriceA;
+            // Tri par prix (du plus cher au moins cher)
+            if (dataA.avgPrice === Infinity && dataB.avgPrice === Infinity) return 0;
+            if (dataA.avgPrice === Infinity) return 1;
+            if (dataB.avgPrice === Infinity) return -1;
+            return dataB.avgPrice - dataA.avgPrice;
           case 'bestValue':
-            const valueA = avgRatingA / (avgPriceA || 1);
-            const valueB = avgRatingB / (avgPriceB || 1);
+            // Tri par rapport qualité/prix (du meilleur au pire)
+            const valueA = dataA.avgPrice === Infinity ? 0 : dataA.avgRating / dataA.avgPrice;
+            const valueB = dataB.avgPrice === Infinity ? 0 : dataB.avgRating / dataB.avgPrice;
             return valueB - valueA;
           default:
             return 0;
@@ -73,7 +121,7 @@ export default function HomeScreen() {
     }
 
     return filtered;
-  }, [cigars, activeFilters]);
+  }, [cigars, activeFilters, cigarData]);
 
   const toggleFilter = (type: keyof Filter, value: string) => {
     setActiveFilters(prev => {

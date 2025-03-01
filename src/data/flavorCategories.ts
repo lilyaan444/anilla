@@ -216,7 +216,7 @@ export const CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Comme un whisky single malt léger'
       }
     ],
-    gradient: ['#A0522D', '#654321'],
+    gradient: ['#A0522D', '#7E3517'], // Brun-roux à café torréfié
     howToIdentify: 'Ces notes se développent souvent en milieu et fin de fumée. La rétro-olfaction est essentielle pour les apprécier pleinement.'
   },
   'Floral': {
@@ -263,7 +263,7 @@ export const CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Note douce et légèrement poudrée'
       }
     ],
-    gradient: ['#BA55D3', '#4B0082'],
+    gradient: ['#BA55D3', '#9932CC'], // Violet orchidée à violet profond
     howToIdentify: 'Les notes florales sont plus présentes en début de fumée. Respirez doucement la fumée par le nez pour les détecter.'
   },
   'Fruits': {
@@ -409,11 +409,11 @@ export const CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Note pierreuse distinctive'
       }
     ],
-    gradient: ['#708090', '#2F4F4F'],
+    gradient: ['#708090', '#4A5D6A'], // Gris ardoise à gris-bleu profond
     howToIdentify: 'Les notes minérales sont plus subtiles, perçues en milieu de fumée et souvent en arrière-plan.'
   },
   'Animal': {
-    color: '#8B0000',
+    color: '#A0522D', // Changement de la couleur de base pour un brun cuir plus naturel
     items: [
       {
         name: 'Musc',
@@ -477,7 +477,7 @@ export const CATEGORIES: Record<string, FlavorCategory> = {
     howToIdentify: 'Les notes fermentées sont très distinctives, perçues surtout au nez et en début de dégustation.'
   },
   'Alcools & Spiritueux': {
-    color: '#8B4513',
+    color: '#722F37',
     items: [
       {
         name: 'Rhum',
@@ -505,7 +505,7 @@ export const CATEGORIES: Record<string, FlavorCategory> = {
         howToIdentify: 'Complexité sèche et noisettée'
       }
     ],
-    gradient: ['#8B4513', '#4B0082'],
+    gradient: ['#722F37', '#451E22'], // Deep burgundy to dark wine colors
     howToIdentify: 'Ces notes apparaissent souvent dans les cigares vieillis en fût ou naturellement complexes.'
   },
   'Fruits Secs & Noix': {

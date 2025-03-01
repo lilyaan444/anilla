@@ -87,30 +87,52 @@ export const SimpleFlavorWheel: React.FC<SimpleFlavorWheelProps> = ({
 
   return (
     <Svg height={WHEEL_SIZE} width={WHEEL_SIZE} viewBox={`0 0 ${WHEEL_SIZE} ${WHEEL_SIZE}`}>
-      {/* Effet de lueur derrière la roue */}
       <Defs>
         <LinearGradient id="centerGlow" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#FDF5E6" stopOpacity="0.8" />
-          <Stop offset="100%" stopColor="#FDF5E6" stopOpacity="0.2" />
+          <Stop offset="0%" stopColor="#FDF5E6" stopOpacity="0.9" />
+          <Stop offset="50%" stopColor="#FDF5E6" stopOpacity="0.6" />
+          <Stop offset="100%" stopColor="#FDF5E6" stopOpacity="0.3" />
         </LinearGradient>
 
         {Object.keys(LEVEL_1_CATEGORIES).map((category, index) => {
           const [startColor, endColor] = LEVEL_1_CATEGORIES[category].gradient;
+          const angle = (index * (360 / Object.keys(LEVEL_1_CATEGORIES).length));
+
           return (
-            <LinearGradient key={index} id={`gradient-${index}`} x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor={startColor} />
-              <Stop offset="100%" stopColor={endColor} />
+            <LinearGradient
+              key={index}
+              id={`gradient-${index}`}
+              x1="0.5"
+              y1="0"
+              x2="0.5"
+              y2="1"
+              gradientTransform={`rotate(${45 + angle}, 0.5, 0.5)`}
+            >
+              <Stop offset="0%" stopColor={startColor} stopOpacity="0.95" />
+              <Stop offset="50%" stopColor={endColor} stopOpacity="0.85" />
+              <Stop offset="100%" stopColor={startColor} stopOpacity="0.95" />
             </LinearGradient>
           );
         })}
 
-        {/* Définition des effets de lueur pour les segments sélectionnés */}
+        {/* Glow effects for selected segments */}
         {Object.keys(LEVEL_1_CATEGORIES).map((category, index) => {
           const [startColor, endColor] = LEVEL_1_CATEGORIES[category].gradient;
+          const angle = (index * (360 / Object.keys(LEVEL_1_CATEGORIES).length));
+
           return (
-            <LinearGradient key={`glow-${index}`} id={`glow-${index}`} x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor={startColor} stopOpacity="0.7" />
-              <Stop offset="100%" stopColor={endColor} stopOpacity="0.3" />
+            <LinearGradient
+              key={`glow-${index}`}
+              id={`glow-${index}`}
+              x1="0.5"
+              y1="0"
+              x2="0.5"
+              y2="1"
+              gradientTransform={`rotate(${45 + angle}, 0.5, 0.5)`}
+            >
+              <Stop offset="0%" stopColor={startColor} stopOpacity="0.8" />
+              <Stop offset="50%" stopColor={endColor} stopOpacity="0.6" />
+              <Stop offset="100%" stopColor={startColor} stopOpacity="0.4" />
             </LinearGradient>
           );
         })}
