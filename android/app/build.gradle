@@ -93,7 +93,13 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
+        buildConfigField("boolean", "IS_NEW_ARCHITECTURE_ENABLED", "true")
     }
+
+    buildFeatures {
+        buildConfig true
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -101,8 +107,17 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file('release.keystore')
+            storePassword 'your_keystore_password'
+            keyAlias 'anilla'
+            keyPassword 'your_key_password'
+        }
     }
     buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
         debug {
             signingConfig signingConfigs.debug
         }
@@ -155,15 +170,12 @@ dependencies {
     def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true";
 
     if (isGifEnabled) {
-        // For animated gif support
         implementation("com.facebook.fresco:animated-gif:${reactAndroidLibs.versions.fresco.get()}")
     }
 
     if (isWebpEnabled) {
-        // For webp support
         implementation("com.facebook.fresco:webpsupport:${reactAndroidLibs.versions.fresco.get()}")
         if (isWebpAnimatedEnabled) {
-            // Animated webp support
             implementation("com.facebook.fresco:animated-webp:${reactAndroidLibs.versions.fresco.get()}")
         }
     }
@@ -173,4 +185,6 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 }

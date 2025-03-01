@@ -47,12 +47,11 @@ export default {
       typedRoutes: true
     },
     extra: {
+      eas: {
+        projectId: "4c53966b-37ce-40ea-9fd2-6587ad317789"
+      },
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
-    },
-    jsEngine: "jsc",
-    developmentClient: {
-      silentLaunch: true
     }
   }
 };

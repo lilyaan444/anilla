@@ -13,6 +13,7 @@ type Filter = {
   origin?: string;
   flavor?: string;
   format?: string;
+  sort?: 'cheaper' | 'expensive' | 'bestValue';
 };
 
 export default function HomeScreen() {
@@ -37,12 +38,41 @@ export default function HomeScreen() {
   const origins = useMemo(() => [...new Set(cigars.map(cigar => cigar.origin))], [cigars]);
   const formats = useMemo(() => [...new Set(cigars.map(cigar => cigar.format))], [cigars]);
 
-  const filteredCigars = useMemo(() => {
-    return cigars.filter(cigar => {
+  const sortedAndFilteredCigars = useMemo(() => {
+    let filtered = cigars.filter(cigar => {
       if (activeFilters.origin && cigar.origin !== activeFilters.origin) return false;
       if (activeFilters.format && cigar.format !== activeFilters.format) return false;
       return true;
     });
+
+    if (activeFilters.sort) {
+      filtered = [...filtered].sort((a, b) => {
+        const pricesA = useCigarPrices(a.id).prices;
+        const pricesB = useCigarPrices(b.id).prices;
+        const reviewsA = useReviews(a.id).reviews;
+        const reviewsB = useReviews(b.id).reviews;
+
+        const avgPriceA = pricesA.length ? pricesA.reduce((sum, p) => sum + p.price, 0) / pricesA.length : Infinity;
+        const avgPriceB = pricesB.length ? pricesB.reduce((sum, p) => sum + p.price, 0) / pricesB.length : Infinity;
+        const avgRatingA = reviewsA.length ? reviewsA.reduce((sum, r) => sum + r.rating, 0) / reviewsA.length : 0;
+        const avgRatingB = reviewsB.length ? reviewsB.reduce((sum, r) => sum + r.rating, 0) / reviewsB.length : 0;
+
+        switch (activeFilters.sort) {
+          case 'cheaper':
+            return avgPriceA - avgPriceB;
+          case 'expensive':
+            return avgPriceB - avgPriceA;
+          case 'bestValue':
+            const valueA = avgRatingA / (avgPriceA || 1);
+            const valueB = avgRatingB / (avgPriceB || 1);
+            return valueB - valueA;
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return filtered;
   }, [cigars, activeFilters]);
 
   const toggleFilter = (type: keyof Filter, value: string) => {
@@ -63,7 +93,8 @@ export default function HomeScreen() {
 
     const averageRating = useMemo(() => {
       if (!reviews || reviews.length === 0) return 0;
-      return Math.round(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length);
+      const avg = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+      return Math.round(avg * 2) / 2; // Round to nearest 0.5
     }, [reviews]);
 
     const averagePrice = useMemo(() => {
@@ -77,7 +108,13 @@ export default function HomeScreen() {
           {[1, 2, 3, 4, 5].map((star) => (
             <Ionicons
               key={star}
-              name={star <= averageRating ? "star" : "star-outline"}
+              name={
+                averageRating >= star
+                  ? "star"
+                  : averageRating >= star - 0.5
+                  ? "star-half"
+                  : "star-outline"
+              }
               size={12}
               color="#DAA520"
             />
@@ -194,6 +231,47 @@ export default function HomeScreen() {
               </View>
             </ScrollView>
           </View>
+
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>{t('home.sort')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.filterOptions}>
+                <Pressable
+                  style={[
+                    styles.filterOption,
+                    activeFilters.sort === 'cheaper' && styles.filterOptionActive
+                  ]}
+                  onPress={() => toggleFilter('sort', 'cheaper')}>
+                  <Text style={[
+                    styles.filterText,
+                    activeFilters.sort === 'cheaper' && styles.filterTextActive
+                  ]}>{t('home.cheaper')}</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.filterOption,
+                    activeFilters.sort === 'expensive' && styles.filterOptionActive
+                  ]}
+                  onPress={() => toggleFilter('sort', 'expensive')}>
+                  <Text style={[
+                    styles.filterText,
+                    activeFilters.sort === 'expensive' && styles.filterTextActive
+                  ]}>{t('home.expensive')}</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.filterOption,
+                    activeFilters.sort === 'bestValue' && styles.filterOptionActive
+                  ]}
+                  onPress={() => toggleFilter('sort', 'bestValue')}>
+                  <Text style={[
+                    styles.filterText,
+                    activeFilters.sort === 'bestValue' && styles.filterTextActive
+                  ]}>{t('home.bestValue')}</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
         </View>
       )}
 
@@ -214,7 +292,7 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.grid}>
-          {filteredCigars.map((cigar) => (
+          {sortedAndFilteredCigars.map((cigar) => (
             <Link href={`/cigar/${cigar.id}`} key={cigar.id} asChild>
               <TouchableOpacity
                 style={styles.card}

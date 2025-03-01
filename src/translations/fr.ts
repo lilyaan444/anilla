@@ -37,12 +37,17 @@ export default {
     format: 'Format',
     popular: 'Populaire',
     premium: 'Premium',
+    sort: 'Trier par', // Add this
+    cheaper: 'Prix le plus bas', // Add this
+    expensive: 'Prix le plus élevé', // Add this
+    bestValue: 'Meilleur rapport qualité/prix', // Add this
   },
   cigar: {
     notFound: 'Cigare non trouvé',
     origin: 'Origine',
     format: 'Format',
     rating: 'Note',
+    ratingOnly: 'Note uniquement',
     flavorProfile: 'Profil de saveur',
     description: 'Description',
     reviews: 'Avis',
@@ -189,6 +194,8 @@ export default {
     clove: 'Clou de girofle',
   },
   flavorswheel: {
+    simpleMode: 'Simple',
+    complexMode: 'Complexe',
     wheelTitle: 'Roue des Saveurs de Cigares',
     wheelSubtitle: 'Explorez les profils gustatifs',
     tastingGuide: 'Guide de dégustation',

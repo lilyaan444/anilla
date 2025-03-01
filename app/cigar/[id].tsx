@@ -313,9 +313,22 @@ export default function CigarDetailScreen() {
                     {[1, 2, 3, 4, 5].map((star) => (
                       <TouchableOpacity
                         key={star}
-                        onPress={() => setRating(star)}>
+                        onPress={() => {
+                          if (rating === star) {
+                            setRating(star - 0.5);
+                          } else {
+                            setRating(star);
+                          }
+                        }}
+                      >
                         <Ionicons
-                          name={rating >= star ? "star" : "star-outline"}
+                          name={
+                            rating >= star
+                              ? "star"
+                              : rating >= star - 0.5
+                              ? "star-half"
+                              : "star-outline"
+                          }
                           size={24}
                           color="#DAA520"
                         />
@@ -366,10 +379,16 @@ export default function CigarDetailScreen() {
                     <View key={review.id} style={styles.reviewItem}>
                       <View style={styles.reviewHeader}>
                         <View style={styles.ratingDisplay}>
-                          {[...Array(review.rating)].map((_, i) => (
+                          {[...Array(5)].map((_, i) => (
                             <Ionicons
                               key={i}
-                              name="star"
+                              name={
+                                review.rating >= i + 1
+                                  ? "star"
+                                  : review.rating >= i + 0.5
+                                  ? "star-half"
+                                  : "star-outline"
+                              }
                               size={16}
                               color="#DAA520"
                             />
@@ -379,7 +398,13 @@ export default function CigarDetailScreen() {
                           {new Date(review.created_at).toLocaleDateString()}
                         </Text>
                       </View>
-                      <Text style={styles.reviewText}>{review.comment}</Text>
+                      {review.comment ? (
+                        <Text style={styles.reviewText}>{review.comment}</Text>
+                      ) : (
+                        <View style={styles.noCommentContainer}>
+                          <Text style={styles.noCommentText}>{t('cigar.ratingOnly')}</Text>
+                        </View>
+                      )}
                     </View>
                   ))
                 ) : (
