@@ -121,6 +121,7 @@ export const homeStyles = StyleSheet.create({
     borderRadius: 8,
     flex: 1,
     minWidth: 80,
+    alignSelf: 'flex-start',
   },
   ratingText: {
     fontSize: 10,
@@ -134,6 +135,7 @@ export const homeStyles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    alignSelf: 'flex-start',
   },
   priceContainerSpacing: {
     marginTop: 4,
@@ -271,5 +273,17 @@ export const homeStyles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#8B4513',
+  },
+  // Ajoutez ces styles à votre fichier de styles existant
+  placeholderImage: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#DEB887',
+  },
+  placeholderText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FDF5E6',
+    marginTop: 8,
   },
 });

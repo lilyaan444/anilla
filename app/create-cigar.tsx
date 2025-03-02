@@ -169,10 +169,6 @@ export default function CreateCigarScreen() {
     };
 
     const handleSubmit = async () => {
-      if (!image) {
-        Alert.alert(t('createCigar.error'), t('createCigar.imageRequired'));
-        return;
-      }
 
       if (!formData.name || !formData.origin || !formData.format || !formData.flavor || !formData.description) {
         Alert.alert(t('createCigar.error'), t('createCigar.fillAllFields'));
@@ -180,82 +176,85 @@ export default function CreateCigarScreen() {
       }
 
       setLoading(true);
-      setUploadProgress(t('createCigar.preparingImage'));
+      setUploadProgress(t('createCigar.preparing'));
 
       try {
         if (!session?.user) {
           throw new Error('User must be authenticated to upload images');
         }
 
-        setUploadProgress(t('createCigar.processingImage'));
+        let publicUrl = null;
 
-        let fileToUpload;
-        if (Platform.OS === 'web') {
-          // Gestion spéciale pour le web
-          if (image.startsWith('data:')) {
-            const base64Data = image.split(',')[1];
-            const byteCharacters = atob(base64Data);
-            const byteArrays = [];
+        // Only process image if one was selected
+        if (image) {
+          setUploadProgress(t('createCigar.processingImage'));
 
-            for (let i = 0; i < byteCharacters.length; i += 512) {
-              const slice = byteCharacters.slice(i, i + 512);
-              const byteNumbers = new Array(slice.length);
-              for (let j = 0; j < slice.length; j++) {
-                byteNumbers[j] = slice.charCodeAt(j);
+          let fileToUpload;
+          if (Platform.OS === 'web') {
+            // Gestion spéciale pour le web
+            if (image.startsWith('data:')) {
+              const base64Data = image.split(',')[1];
+              const byteCharacters = atob(base64Data);
+              const byteArrays = [];
+
+              for (let i = 0; i < byteCharacters.length; i += 512) {
+                const slice = byteCharacters.slice(i, i + 512);
+                const byteNumbers = new Array(slice.length);
+                for (let j = 0; j < slice.length; j++) {
+                  byteNumbers[j] = slice.charCodeAt(j);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
               }
-              const byteArray = new Uint8Array(byteNumbers);
-              byteArrays.push(byteArray);
+
+              fileToUpload = new Blob(byteArrays, { type: 'image/jpeg' });
+            } else {
+              const response = await fetch(image);
+              fileToUpload = await response.blob();
             }
-
-            fileToUpload = new Blob(byteArrays, { type: 'image/jpeg' });
           } else {
-            const response = await fetch(image);
-            fileToUpload = await response.blob();
+            // Pour iOS et Android, utiliser directement l'URI du fichier
+            fileToUpload = {
+              uri: image,
+              name: 'upload.jpg',
+              type: 'image/jpeg'
+            };
           }
-        } else {
-          // Pour iOS et Android, utiliser directement l'URI du fichier
-          fileToUpload = {
-            uri: image,
-            name: 'upload.jpg',
-            type: 'image/jpeg'
-          };
+
+          if (!fileToUpload) {
+            throw new Error('Failed to prepare image for upload');
+          }
+
+          setUploadProgress(t('createCigar.uploadingImage'));
+
+          const fileName = `${Date.now()}-${formData.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
+            .trim()}.jpg`;
+          const imagePath = `cigars/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('cigar-images')
+            .upload(imagePath, fileToUpload, {
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            throw new Error(`Upload failed: ${uploadError.message}`);
+          }
+
+          const { data: { publicUrl: uploadedUrl } } = supabase.storage
+            .from('cigar-images')
+            .getPublicUrl(imagePath);
+
+          publicUrl = uploadedUrl;
         }
 
-        if (!fileToUpload) {
-          throw new Error('Failed to prepare image for upload');
-        }
-
-        setUploadProgress(t('createCigar.uploadingImage'));
-
-        // Créer un nom de fichier sécurisé
-        const fileName = `${Date.now()}-${formData.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '-')
-          .replace(/-+/g, '-')
-          .trim()}.jpg`;
-        const imagePath = `cigars/${fileName}`;
-
-        // Upload du fichier
-        const { error: uploadError } = await supabase.storage
-          .from('cigar-images')
-          .upload(imagePath, fileToUpload, {
-            contentType: 'image/jpeg',
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          throw new Error(`Upload failed: ${uploadError.message}`);
-        }
-
-        // Récupérer l'URL publique
-        const { data: { publicUrl } } = supabase.storage
-          .from('cigar-images')
-          .getPublicUrl(imagePath);
-
-        // Créer l'enregistrement dans la base de données
-        // Create cigar without price
+        // Create cigar with optional image
         const { data: cigarData, error: insertError } = await supabase
           .from('cigars')
           .insert([{
@@ -264,7 +263,7 @@ export default function CreateCigarScreen() {
             format: formData.format,
             flavor: formData.flavor,
             description: formData.description,
-            image: publicUrl,
+            image: publicUrl, // Will be null if no image was uploaded
             created_by: session.user.id
           }])
           .select()

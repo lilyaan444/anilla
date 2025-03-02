@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import Svg, { Path, G, Text as SvgText, Circle, Stop, LinearGradient, Defs } from 'react-native-svg';
 import { LEVEL_1_CATEGORIES, LEVEL_2_CATEGORIES } from '../data/simpleFlavorCategories';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+// Simplifier les imports d'animation pour éviter les conflits
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+  useSharedValue,
+  withTiming,
+  Easing,
+  runOnJS
+} from 'react-native-reanimated';
 
 export const SecondLevelWheel: React.FC<SecondLevelWheelProps> = ({
   WHEEL_SIZE,
@@ -16,9 +23,14 @@ export const SecondLevelWheel: React.FC<SecondLevelWheelProps> = ({
 }) => {
   const subCategories = Object.keys(LEVEL_2_CATEGORIES[selectedMainCategory] || {});
   const arcs = createPie(subCategories);
-  const SEGMENT_SCALE = 1; // Reduced from 1.05 to make the scaling effect more subtle
-
+  const SEGMENT_SCALE = 1;
   const MAX_WORD_LENGTH = 10; // Longueur maximale des mots avant traitement
+
+  // Animation values
+  const wheelScale = useSharedValue(1);
+  const wheelOpacity = useSharedValue(1);
+  const wheelRotation = useSharedValue(0);
+  const centerScale = useSharedValue(1);
 
   // Récupérer les couleurs de gradient de la catégorie principale
   const getGradientColors = () => {
@@ -74,89 +86,176 @@ export const SecondLevelWheel: React.FC<SecondLevelWheelProps> = ({
     }
   };
 
+  // Animation d'entrée
+  useEffect(() => {
+    // Animation d'entrée avec un petit effet de rebond
+    wheelScale.value = withSpring(1, {
+      damping: 12,
+      stiffness: 90,
+      mass: 1
+    });
+
+    // Légère rotation pour un effet plus dynamique
+    wheelRotation.value = withTiming(10, {
+      duration: 800,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+    }, () => {
+      wheelRotation.value = withTiming(0, { duration: 400 });
+    });
+  }, []);
+
+  // Animation quand une sous-catégorie est sélectionnée
+  useEffect(() => {
+    if (selectedSubCategory && selectedSubCategory !== 'back') {
+      // Effet de pulsation sur le cercle central
+      centerScale.value = withSpring(1.2, { damping: 4 });
+      setTimeout(() => {
+        centerScale.value = withSpring(1);
+      }, 300);
+
+      // Préparation pour la transition vers le niveau 3
+      const selectedIndex = subCategories.indexOf(selectedSubCategory);
+      if (selectedIndex >= 0) {
+        // Calculer l'angle du segment sélectionné
+        const arc = arcs[selectedIndex];
+        const angle = (arc.startAngle + arc.endAngle) / 2;
+        const targetRotation = -((angle * 180) / Math.PI - 90);
+
+        // Rotation pour centrer le segment sélectionné
+        wheelRotation.value = withTiming(targetRotation, {
+          duration: 600,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+        });
+      }
+    }
+  }, [selectedSubCategory]);
+
+  // Animation style pour la roue entière
+  const wheelStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: wheelScale.value },
+        { rotate: `${wheelRotation.value}deg` }
+      ],
+      opacity: wheelOpacity.value
+    };
+  });
+
+  // Animation style pour le cercle central
+  const centerStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: centerScale.value }]
+    };
+  });
+
+  // Fonction pour gérer la transition vers le niveau 3
+  const handleCategoryTransition = (category: string) => {
+    if (category === 'back') {
+      // Animation très simple et rapide pour le retour
+      wheelOpacity.value = withTiming(0.8, {
+        duration: 150
+      }, () => {
+        handlePress(category);
+      });
+      return;
+    }
+
+    // Pour les autres catégories, utiliser une animation simple
+    wheelOpacity.value = withTiming(0, {
+      duration: 300,
+      easing: Easing.ease
+    }, () => {
+      runOnJS(handlePress)(category);
+    });
+  };
+
   return (
-    <Svg height={WHEEL_SIZE} width={WHEEL_SIZE} viewBox={`0 0 ${WHEEL_SIZE} ${WHEEL_SIZE}`}>
-      <Defs>
-        {subCategories.map((category, index) => {
-          const [startColor, endColor] = generateVariantColors(index, subCategories.length);
-          return (
-            <LinearGradient key={index} id={`gradient-${index}`} x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor={startColor} />
-              <Stop offset="100%" stopColor={endColor} />
-            </LinearGradient>
-          );
-        })}
-      </Defs>
-      <G transform={`translate(${WHEEL_CENTER}, ${WHEEL_CENTER})`}>
-        {arcs.map((arc, index) => {
-          const category = subCategories[index];
-          const angle = (arc.startAngle + arc.endAngle) / 2;
-          const textRadius = WHEEL_SIZE / 3;
-          const textX = textRadius * Math.cos(angle - Math.PI / 2);
-          const textY = textRadius * Math.sin(angle - Math.PI / 2);
-          let rotation = (angle * 180) / Math.PI - 90;
-          if (angle > Math.PI) rotation += 180;
+    <Animated.View style={wheelStyle}>
+      <Svg height={WHEEL_SIZE} width={WHEEL_SIZE} viewBox={`0 0 ${WHEEL_SIZE} ${WHEEL_SIZE}`}>
+        <Defs>
+          {subCategories.map((category, index) => {
+            const [startColor, endColor] = generateVariantColors(index, subCategories.length);
+            return (
+              <LinearGradient key={index} id={`gradient-${index}`} x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0%" stopColor={startColor} />
+                <Stop offset="100%" stopColor={endColor} />
+              </LinearGradient>
+            );
+          })}
+        </Defs>
+        <G transform={`translate(${WHEEL_CENTER}, ${WHEEL_CENTER})`}>
+          {arcs.map((arc, index) => {
+            const category = subCategories[index];
+            const angle = (arc.startAngle + arc.endAngle) / 2;
+            const textRadius = WHEEL_SIZE / 3;
+            const textX = textRadius * Math.cos(angle - Math.PI / 2);
+            const textY = textRadius * Math.sin(angle - Math.PI / 2);
+            let rotation = (angle * 180) / Math.PI - 90;
+            if (angle > Math.PI) rotation += 180;
 
-          const isSelected = selectedSubCategory === category;
-          const scale = isSelected ? SEGMENT_SCALE : 1;
+            const isSelected = selectedSubCategory === category;
+            const scale = isSelected ? SEGMENT_SCALE : 1;
 
-          // Modified transform logic to handle scaling more smoothly
-          return (
-            <G key={category}>
-              <Path
-                d={createArc(arc)}
-                fill={`url(#gradient-${index})`}
-                stroke="#FFF"
-                strokeWidth={1.5}
-                onPress={() => handlePress(category)}
-                transform={isSelected ? `scale(${scale})` : undefined}
-                opacity={isSelected ? 0.9 : 1} // Added slight opacity change for selected segment
-              />
-              <G
-                transform={`translate(${textX}, ${textY}) rotate(${rotation})`}
-                opacity={isSelected ? 1 : 0.9} // Text opacity adjustment
-              >
-                <SvgText
-                  fill="#FFF"
-                  fontSize={11}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  alignmentBaseline="middle"
+            return (
+              <G key={category}>
+                <Path
+                  d={createArc(arc)}
+                  fill={`url(#gradient-${index})`}
+                  stroke="#FFF"
+                  strokeWidth={1.5}
+                  onPress={() => handleCategoryTransition(category)}
+                  transform={isSelected ? `scale(${scale})` : undefined}
+                  opacity={isSelected ? 0.9 : 1}
+                />
+                <G
+                  transform={`translate(${textX}, ${textY}) rotate(${rotation})`}
+                  opacity={isSelected ? 1 : 0.9}
                 >
-                  {category.toUpperCase()}
-                </SvgText>
+                  <SvgText
+                    fill="#FFF"
+                    fontSize={11}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    alignmentBaseline="middle"
+                  >
+                    {category.toUpperCase()}
+                  </SvgText>
+                </G>
               </G>
-            </G>
-          );
-        })}
+            );
+          })}
 
-        {/* Updated center back button */}
-        <Circle
-          r={WHEEL_SIZE / 4}
-          fill="#FDF5E6"
-          stroke="#8B4513"
-          strokeWidth={2}
-          onPress={() => handlePress('back')}
-        />
-        <SvgText
-          x="0"
-          y="-5"
-          fill="#8B4513"
-          fontSize={16}
-          fontWeight="bold"
-          textAnchor="middle"
-        >
-          {selectedMainCategory}
-        </SvgText>
-        <Path
-          d="M-12,15 L12,15 M-12,15 L-4,8 M-12,15 L-4,22"
-          stroke="#8B4513"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          onPress={() => handlePress('back')}
-        />
-      </G>
-    </Svg>
+          {/* Cercle central avec animation */}
+          <Circle
+            r={WHEEL_SIZE / 6}
+            fill="#8B4513"
+            stroke="#FDF5E6"
+            strokeWidth={2}
+            onPress={() => handleCategoryTransition('back')}
+          />
+          <SvgText
+            x="0"
+            y="-5"
+            fill="#FDF5E6"
+            fontSize={16}
+            fontWeight="bold"
+            textAnchor="middle"
+          >
+            {selectedMainCategory}
+          </SvgText>
+          <SvgText
+            x="0"
+            y="20"
+            fontSize="14"
+            fontWeight="bold"
+            fill="#FDF5E6"
+            textAnchor="middle"
+            onPress={() => handleCategoryTransition('back')}
+          >
+            RETOUR
+          </SvgText>
+        </G>
+      </Svg>
+    </Animated.View>
   );
 };

@@ -12,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { useCigarPrices } from '../../src/hooks/useCigarPrices';
 import { LineChart } from 'react-native-chart-kit';
 import { cigarDetailStyles as styles } from '../../src/styles';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function CigarDetailScreen() {
   const { t } = useTranslation();  // Ajout de l'initialisation du hook
@@ -160,6 +161,38 @@ export default function CigarDetailScreen() {
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : 'No ratings';
 
+  // Function to generate different gradient colors based on cigar properties
+  const getGradientColorsForCigar = (cigar) => {
+    // Use different color schemes based on origin
+    const colorSchemes = {
+      'Cuba': ['#B22222', '#8B0000', '#800000'],
+      'Nicaragua': ['#228B22', '#006400', '#004d00'],
+      'Dominican Republic': ['#4682B4', '#1E90FF', '#00008B'],
+      'Honduras': ['#FF8C00', '#FF4500', '#8B4513'],
+      'Mexico': ['#9932CC', '#8B008B', '#4B0082'],
+      'Brazil': ['#2E8B57', '#3CB371', '#006400'],
+      'default': ['#DEB887', '#CD853F', '#8B4513']
+    };
+
+    // Get colors based on origin, or use default if origin not in our schemes
+    const colors = colorSchemes[cigar.origin] || colorSchemes.default;
+
+    // Add some variation based on cigar ID
+    if (cigar.id) {
+      const idSum = cigar.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+      if (idSum % 3 === 0) {
+        return [colors[2], colors[1], colors[0]];
+      } else if (idSum % 3 === 1) {
+        return colors;
+      } else {
+        return [colors[1], colors[0], colors[2]];
+      }
+    }
+
+    return colors;
+  };
+
   return (
     <View style={styles.container}>
       <KeyboardAvoidingView
@@ -168,15 +201,27 @@ export default function CigarDetailScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <ScrollView>
-          <Image source={{ uri: cigar.image }} style={styles.image} />
+          {cigar.image ? (
+            <Image source={{ uri: cigar.image }} style={styles.image} />
+          ) : (
+            <LinearGradient
+              colors={getGradientColorsForCigar(cigar)}
+              style={styles.image}
+            >
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="leaf-outline" size={60} color="#FDF5E6" />
+                <Text style={styles.placeholderText}>{cigar.name.charAt(0).toUpperCase()}</Text>
+              </View>
+            </LinearGradient>
+          )}
 
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
 
-        <View style={styles.content}>
+          <View style={styles.content}>
           <Text style={styles.name}>{cigar.name}</Text>
 
           <View style={styles.infoRow}>

@@ -5,3 +5,4 @@ export * from './flavors.styles';
 export * from './favorites.styles';
 export * from './cigar-detail.styles';
 export * from './create-cigar.styles';
+export * from './friends.styles'

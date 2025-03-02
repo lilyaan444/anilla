@@ -1,6 +1,10 @@
 export default {
   common: {
     loading: 'Loading...',
+    error: 'An error occurred',
+    goBack: 'Back',
+    save: 'Save',
+    cancel: 'Cancel',
   },
   profile: {
     title: 'Profile',
@@ -16,10 +20,16 @@ export default {
     language: 'Language',
     signOut: 'Sign Out',
     signingOut: 'Signing out...',
-    favorites: {
-      title: 'Favorites',
-      noFavorites: 'No favorites yet',
-    },
+    stats: 'Statistics',
+    reviews: 'Reviews',
+    cigarsAdded: 'Cigars Added',
+    favoriteOrigin: 'Favorite Origin',
+    username: 'Username',
+    usernamePlaceholder: 'Enter your username',
+    bio: 'Bio',
+    bioPlaceholder: 'Write something about yourself...',
+    editProfile: 'Edit Profile',
+    activity: 'Recent Activity',
   },
   favorites: {
     title: 'Favorites',

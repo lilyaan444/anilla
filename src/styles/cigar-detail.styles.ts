@@ -349,4 +349,16 @@ export const cigarDetailStyles = StyleSheet.create({
     fontStyle: 'italic',
     fontSize: 12,
   },
+  // Ajoutez ces styles à votre fichier de styles existant
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#FDF5E6',
+    marginTop: 16,
+  },
 });

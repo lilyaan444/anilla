@@ -222,6 +222,7 @@ export default function FlavorWheel() {
     setCurrentLevel(4);
   }, []);
 
+  // Update the existing handleSubCategoryPress function
   const handleSubCategoryPress = useCallback((category: string) => {
     if (detailsPanelY.value === 0) {
       if (category === 'back') {
@@ -232,10 +233,12 @@ export default function FlavorWheel() {
         const currentRotation = rotation.value;
         const normalizedRotation = Math.round(currentRotation / 360) * 360;
 
+        // Clean up references and states before changing level
         scale.value = withSpring(1, { damping: 2 });
         rotation.value = withTiming(normalizedRotation, { duration: 400 });
         opacity.value = withTiming(0.6, { duration: 200 }, () => {
           opacity.value = withTiming(1, { duration: 200 });
+          runOnJS(setSelectedSubCategory)(null);
           runOnJS(setCurrentLevel)(1);
           runOnJS(setSelectedMainCategory)(null);
         });
@@ -250,39 +253,43 @@ export default function FlavorWheel() {
         setCurrentLevel(3);
       }
     }
-  }, []);
+  }, [detailsPanelY.value, rotation.value, scale.value, opacity.value]);
 
   const handleBackToLevel2 = useCallback(() => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    // Nettoyer les références avant de changer de niveau
     setCurrentLevel(2);
     setSelectedSpecificFlavor(null);
   }, []);
 
   // Add this handler near the other handler functions
-const handlePress = useCallback((category: string) => {
-  if (detailsPanelY.value === 0) {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      triggerHapticFeedback();
-    }
-
-    setSelectedCategory(prev => {
-      if (prev === category) {
-        if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        }
-        scale.value = withSpring(1, { damping: 2 });
-        opacity.value = withTiming(1);
-        return null;
+  const handlePress = useCallback((category: string) => {
+    if (detailsPanelY.value === 0) {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        triggerHapticFeedback();
       }
 
-      animateWheelSelection();
-      return category;
-    });
-  }
-}, []);
+      setSelectedCategory(prev => {
+        if (prev === category) {
+          if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          }
+          scale.value = withSpring(1, { damping: 2 });
+          opacity.value = withTiming(1);
+          return null;
+        }
+
+        animateWheelSelection();
+        return category;
+      });
+    }
+  }, []);
+
+  // Modifier cette fonction pour gérer proprement la transition
+
 
   const handleBackToLevel3 = useCallback(() => {
     if (Platform.OS !== 'web') {

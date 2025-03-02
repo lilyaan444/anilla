@@ -1,6 +1,10 @@
 export default {
   common: {
     loading: 'Cargando...',
+    error: 'Ha ocurrido un error',
+    goBack: 'Volver',
+    save: 'Guardar',
+    cancel: 'Cancelar',
   },
   profile: {
     title: 'Perfil',
@@ -16,16 +20,16 @@ export default {
     language: 'Idioma',
     signOut: 'Cerrar sesión',
     signingOut: 'Cerrando sesión...',
-    favorites: {
-      title: 'Favoritos',
-      noFavorites: 'No hay favoritos todavía',
-    },
-    navigation: {
-      home: 'Inicio',
-      search: 'Buscar',
-      favorites: 'Favoritos',
-      profile: 'Perfil',
-    },
+    stats: 'Estadísticas',
+    reviews: 'Reseñas',
+    cigarsAdded: 'Puros añadidos',
+    favoriteOrigin: 'Origen favorito',
+    username: 'Nombre de usuario',
+    usernamePlaceholder: 'Introduce tu nombre de usuario',
+    bio: 'Biografía',
+    bioPlaceholder: 'Escribe algo sobre ti...',
+    editProfile: 'Editar perfil',
+    activity: 'Actividad reciente',
   },
   favorites: {
     title: 'Favoritos',

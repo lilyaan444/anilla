@@ -9,6 +9,7 @@ import { useTranslation } from '../../src/hooks/useTranslation';
 import { useCigarPrices } from '../../src/hooks/useCigarPrices';
 import { homeStyles as styles } from '../../src/styles';
 import { supabase } from '../../src/lib/supabase'; // Add this import
+import { LinearGradient } from 'expo-linear-gradient';
 
 type Filter = {
   origin?: string;
@@ -197,6 +198,65 @@ export default function HomeScreen() {
     );
   }
 
+  // Add this function to render the cigar image or a placeholder with varying gradients
+  const renderCigarImage = (cigar) => {
+    if (cigar.image) {
+      return (
+        <Image source={{ uri: cigar.image }} style={styles.cardImage} />
+      );
+    } else {
+      // Generate gradient colors based on cigar properties for variety
+      const gradientColors = getGradientColorsForCigar(cigar);
+
+      return (
+        <LinearGradient
+          colors={gradientColors}
+          style={[styles.cardImage, styles.placeholderImage]}
+        >
+          <Ionicons name="leaf-outline" size={40} color="#FDF5E6" />
+          <Text style={styles.placeholderText}>{cigar.name.charAt(0).toUpperCase()}</Text>
+        </LinearGradient>
+      );
+    }
+  };
+
+  // Function to generate different gradient colors based on cigar properties
+  const getGradientColorsForCigar = (cigar) => {
+    // Use different color schemes based on origin or format
+    const colorSchemes = {
+      'Cuba': ['#B22222', '#8B0000', '#800000'],
+      'Nicaragua': ['#228B22', '#006400', '#004d00'],
+      'Dominican Republic': ['#4682B4', '#1E90FF', '#00008B'],
+      'Honduras': ['#FF8C00', '#FF4500', '#8B4513'],
+      'Mexico': ['#9932CC', '#8B008B', '#4B0082'],
+      'Brazil': ['#2E8B57', '#3CB371', '#006400'],
+      'default': ['#DEB887', '#CD853F', '#8B4513']
+    };
+
+    // Get colors based on origin, or use default if origin not in our schemes
+    const colors = colorSchemes[cigar.origin] || colorSchemes.default;
+
+    // Add some randomness to make each cigar unique
+    if (cigar.id) {
+      // Use the cigar ID to create some deterministic variation
+      const idSum = cigar.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+      // Slightly adjust the middle color based on the ID
+      if (idSum % 3 === 0) {
+        // Swap first and last colors
+        return [colors[2], colors[1], colors[0]];
+      } else if (idSum % 3 === 1) {
+        // Use original order
+        return colors;
+      } else {
+        // Use a different variation
+        return [colors[1], colors[0], colors[2]];
+      }
+    }
+
+    return colors;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -345,7 +405,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.7}>
-                <Image source={{ uri: cigar.image }} style={styles.cardImage} />
+                {renderCigarImage(cigar)}
                 <View style={styles.cardContent}>
                   <Text style={styles.cardTitle}>{cigar.name}</Text>
                   <Text style={styles.cardSubtitle}>{cigar.origin}</Text>

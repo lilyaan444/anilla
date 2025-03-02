@@ -86,6 +86,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="friends"
+        options={{
+          title: t('navigation.friends'),
+          tabBarIcon: ({ size, color }) => (
+            <Ionicons name="people-circle" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="flavors"
         options={{
           href: null,

@@ -3,8 +3,12 @@ export default {
     loading: 'Chargement...',
     error: 'Une erreur est survenue',
     goBack: 'Retour',
+    save: 'Enregistrer',
+    cancel: 'Annuler',
   },
   profile: {
+    following: "Abonnements",
+    followers: "Abonnés",
     title: 'Profil',
     authTitle: 'Connectez-vous ou créez un compte',
     invalidCredentials: 'Email ou mot de passe incorrect',
@@ -18,6 +22,22 @@ export default {
     language: 'Langue',
     signOut: 'Se déconnecter',
     signingOut: 'Déconnexion...',
+    stats: 'Statistiques',
+    reviews: 'Avis',
+    cigarsAdded: 'Cigares ajoutés',
+    favoriteOrigin: 'Origine favorite',
+    username: 'Nom d\'utilisateur',
+    usernamePlaceholder: 'Entrez votre nom d\'utilisateur',
+    bio: 'Biographie',
+    bioPlaceholder: 'Écrivez quelque chose à propos de vous...',
+    editProfile: 'Modifier le profil',
+    activity: 'Activité récente',
+    displayNamePlaceholder: 'Entrez votre nom',
+    phonePlaceholder: 'Entrez votre numéro de téléphone',
+    provider: 'Fournisseur',
+    createdAt: 'Compte créé le',
+    lastSignIn: 'Dernière connexion',
+    profileUpdated: 'Profil mis à jour',
   },
   favorites: {
     title: 'Favoris',
@@ -41,6 +61,31 @@ export default {
     cheaper: 'Prix le plus bas', // Add this
     expensive: 'Prix le plus élevé', // Add this
     bestValue: 'Meilleur rapport qualité/prix', // Add this
+  },
+  friends: {
+    title: 'Amis',
+    viewProfile: 'Voir profil',
+    noFriends: 'Vous n\'avez pas encore d\'amis',
+    pendingRequests: 'Demandes en attente',
+    findFriends: 'Trouver des amis',
+    searchPlaceholder: 'Rechercher par nom ou email',
+    myFriends: 'Mes amis',
+    add: 'Ajouter',
+    alreadyFriend: 'Ami',
+    pendingRequest: 'En attente',
+    requestSent: 'Demande d\'ami envoyée',
+    requestError: 'Erreur lors de l\'envoi de la demande',
+    responseError: 'Erreur lors de la réponse à la demande',
+    friendRemoved: 'Ami supprimé',
+    removeError: 'Erreur lors de la suppression de l\'ami',
+    searchError: 'Erreur lors de la recherche'
+  },
+  notifications: {
+    title: "Notifications",
+    empty: "Aucune notification",
+    friendRequest: "{{name}} vous a envoyé une demande d'ami",
+    requestAccepted: "{{name}} a accepté votre demande d'ami",
+    requestRejected: "{{name}} a refusé votre demande d'ami"
   },
   cigar: {
     notFound: 'Cigare non trouvé',
